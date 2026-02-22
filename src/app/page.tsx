@@ -19,7 +19,7 @@ export default function HomePage() {
           className="bg-background/80 backdrop-blur-sm"
           asChild
         >
-          <Link href="/login">Iniciar Sesión</Link>
+          <Link href="/register">Iniciar Sesión</Link>
         </Button>
         {/*  <Button className="bg-primary/80 backdrop-blur-sm" asChild>
           <Link href="/register">Registrarse</Link>

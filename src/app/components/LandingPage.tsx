@@ -495,12 +495,12 @@ export function LandingPage() {
               asChild
             >
               <Link href="/register">
-                EMPIEZA GRATIS CON IA
+                EMPIEZA GRATIS
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
 
-            <Button
+            {/* <Button
               size="lg"
               variant="outline"
               className="text-lg px-12 py-6 border-2 border-white/30 text-black rounded-full"
@@ -508,7 +508,7 @@ export function LandingPage() {
             >
               <Play className="mr-2 h-5 w-5" />
               Ver Demo Interactivo
-            </Button>
+            </Button> */}
           </motion.div>
 
           {/* Stats */}
