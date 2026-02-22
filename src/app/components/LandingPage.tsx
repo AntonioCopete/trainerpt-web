@@ -475,10 +475,9 @@ export function LandingPage() {
               reduceMotion ? undefined : { delay: 0.5, duration: 0.8 }
             }
           >
-            La primera plataforma fitness con{" "}
-            <span className="text-red-500 font-semibold">IA integrada</span>,
-            constructor visual revolucionario y sistema colaborativo único.
-            Transforma tu negocio fitness en una experiencia premium.
+            La primera plataforma fitness con constructor visual revolucionario
+            y sistema colaborativo único. Transforma tu negocio fitness en una
+            experiencia premium.
           </motion.p>
 
           <motion.div
