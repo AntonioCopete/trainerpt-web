@@ -413,4 +413,7 @@
 //       </div>
 //     </div>
 //   );
-// }
+
+export default function OnboardingPage() {
+  return <div>HELLO</div>;
+} // }
