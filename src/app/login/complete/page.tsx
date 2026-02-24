@@ -17,13 +17,10 @@ export default async function CompleteLogin() {
     cache: "no-store",
   });
 
-  console.log("Respuesta del backend:", res);
-
   if (!res.ok) redirect(`/login?error=backend_${res.status}`);
 
   const me = await res.json();
 
-  console.log(me, "ME");
   // Aquí decides ruta por rol
   if (me.role === "trainer") redirect("/trainer");
   if (me.role === "client") redirect("/client");

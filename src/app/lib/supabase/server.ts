@@ -12,8 +12,14 @@ export async function createSupabaseServer() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {
-          // NO se setean cookies aquí
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // It could fail in server components. It's okay
+          }
         },
       },
     },

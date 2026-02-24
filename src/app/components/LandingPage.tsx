@@ -424,14 +424,6 @@ export function LandingPage() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center z-10">
         {/* Hero Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/images/hero-trainer.jpg"
-            alt="Professional trainer"
-            className="w-full h-full object-cover opacity-40"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        </div>
 
         <motion.div
           className="relative z-10 text-center max-w-6xl px-4"

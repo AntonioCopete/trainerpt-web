@@ -1,0 +1,69 @@
+"use client";
+
+import { useState, useEffect, use, useCallback } from "react";
+import { TemplateEditor } from "../../../../components/forms/TemplateEditor";
+import type { FormTemplate } from "../../../../lib/types/forms";
+import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
+// import { getTemplate } from "@/lib/api/forms";
+
+export default function EditTemplatePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const [template, setTemplate] = useState<FormTemplate | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const supabase = createSupabaseBrowser();
+
+  const fetchTemplate = useCallback(async () => {
+    setLoading(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+
+      const data = await res.json();
+
+      const customFields = data.template.filter((field) => !field.required);
+      data.template.customFields = [...customFields];
+
+      //   const data = await getTemplates();
+      setTemplate(data.template);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    fetchTemplate();
+    // getTemplate(id).then((tpl) => {
+    //   setTemplate(tpl);
+    //   setLoading(false);
+    // });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-red-500" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="py-20 text-center text-gray-500">
+        Plantilla no encontrada
+      </div>
+    );
+  }
+
+  return <TemplateEditor existing={template} />;
+}
