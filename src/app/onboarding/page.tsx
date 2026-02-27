@@ -16,11 +16,24 @@ export default async function OnboardingPage() {
     cache: "no-store",
   });
 
-  if (res.ok) {
-    const me = await res.json();
-
-    if (me?.user?.role) serverRedirectByRole(redirect, me?.user?.role);
+  if (!res.ok) {
+    return redirect("/login?error=me_failed");
   }
 
-  return <OnboardingPageComponent />;
+  const me = await res.json();
+  const user = me?.user ?? me;
+  const role = user?.role as string | undefined;
+  const fullName = user?.fullName as string | undefined;
+
+  // Si ya tiene nombre (perfil completo), redirigimos directamente por rol.
+  if (fullName && role) {
+    serverRedirectByRole(redirect, role);
+  }
+
+  return (
+    <OnboardingPageComponent
+      initialRole={role ?? null}
+      initialFullName={fullName ?? ""}
+    />
+  );
 }

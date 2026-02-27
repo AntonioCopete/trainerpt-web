@@ -120,11 +120,11 @@ export function FormPreview({
               Campos personalizados
             </span>
             <div className="space-y-2">
-              {customFields.map((field) => {
+              {customFields.map((field, index) => {
                 const Icon = typeIcons[field.type] ?? Type;
                 return (
                   <div
-                    key={field.id}
+                    key={field.id ?? `field-${field.order ?? index}`}
                     className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-3 py-2"
                   >
                     <Icon className="h-3.5 w-3.5 text-orange-400" />

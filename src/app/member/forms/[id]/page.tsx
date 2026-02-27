@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, Send, Loader2, CheckCircle2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,14 @@ import type {
   FormAssignment,
   MeasurementData,
   MandatoryKey,
-  CustomFieldValue,
+  CustomField,
 } from "../../../lib/types/forms";
 import {
   MANDATORY_BASICS,
   MANDATORY_MEASUREMENTS,
 } from "../../../lib/types/forms";
-// import { getAssignment, submitFormResponse } from "@/lib/api/forms";
+import { createSupabaseBrowser } from "../../../lib/supabase/browser";
+import { uploadPhotoWithPresignedUrl } from "../../../lib/forms-upload";
 
 export default function FillFormPage({
   params,
@@ -40,6 +41,8 @@ export default function FillFormPage({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const supabase = createSupabaseBrowser();
 
   // Form state
   const [measurements, setMeasurements] = useState<Partial<MeasurementData>>(
@@ -55,10 +58,58 @@ export default function FillFormPage({
   );
 
   useEffect(() => {
-    // getAssignment(id).then((a) => {
-    //   setAssignment(a);
-    //   setLoading(false);
-    // });
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        if (cancelled) return;
+        if (!res.ok) {
+          setAssignment(null);
+          return;
+        }
+        const data = await res.json();
+        const raw = data.assignment ?? data;
+        if (!raw) {
+          setAssignment(null);
+          return;
+        }
+        const template = raw.template ?? raw;
+        const customFields: CustomField[] = Array.isArray(template.customFields)
+          ? template.customFields
+          : Array.isArray(template.schema)
+            ? template.schema
+                .filter((f: CustomField) => !f.required)
+                .map((f: CustomField, i: number) => ({
+                  ...f,
+                  id: f.id ?? `cf-${i}`,
+                  order: f.order ?? i,
+                }))
+            : [];
+        setAssignment({
+          ...raw,
+          template: { ...template, customFields },
+        });
+      } catch {
+        if (!cancelled) setAssignment(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const updateMeasurement = useCallback((key: MandatoryKey, value: number) => {
@@ -83,13 +134,21 @@ export default function FillFormPage({
       !Number.isNaN(measurements[key]),
   );
   const isPhotosValid = photoFront !== null && photoSide !== null;
+  const customFieldsList = assignment?.template?.customFields ?? [];
   const isCustomValid =
-    assignment?.template.customFields
+    customFieldsList
       .filter((f) => f.required)
       .every((f) => {
         if (f.type === "photo") return customPhotos[f.id] != null;
         const val = customValues[f.id];
-        return val !== undefined && val !== "";
+        if (val === undefined || val === "") return false;
+        if (f.type === "number") {
+          const s = String(val);
+          if (s.endsWith(".") || s.endsWith(",")) return false;
+          const n = Number.parseFloat(s.replace(",", "."));
+          return !Number.isNaN(n);
+        }
+        return true;
       }) ?? true;
 
   const isFormValid = isMeasurementsValid && isPhotosValid && isCustomValid;
@@ -97,26 +156,120 @@ export default function FillFormPage({
   const handleSubmit = async () => {
     if (!assignment || !isFormValid) return;
     setSubmitting(true);
+    setSubmitError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("assignmentId", assignment.id);
-      formData.append("measurements", JSON.stringify(measurements));
-      if (photoFront) formData.append("photoFront", photoFront);
-      if (photoSide) formData.append("photoSide", photoSide);
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      if (!token) throw new Error("Sesión expirada. Vuelve a iniciar sesión.");
 
-      const cfValues: CustomFieldValue[] = Object.entries(customValues).map(
-        ([fieldId, value]) => ({ fieldId, value }),
-      );
-      formData.append("customFieldValues", JSON.stringify(cfValues));
+      const assignmentId = assignment.id;
 
-      // Append custom photos
+      // 1) Subir fotos a S3 con presigned URLs y obtener keys
+      let photoFrontKey: string | null = null;
+      let photoSideKey: string | null = null;
+      const customPhotoKeys: Record<string, string> = {};
+
+      if (photoFront) {
+        photoFrontKey = await uploadPhotoWithPresignedUrl({
+          assignmentId,
+          file: photoFront,
+          filename: "front",
+          token,
+        });
+        if (!photoFrontKey?.trim()) {
+          throw new Error(
+            "La foto frontal no se subió correctamente. Inténtalo de nuevo.",
+          );
+        }
+      }
+      if (photoSide) {
+        photoSideKey = await uploadPhotoWithPresignedUrl({
+          assignmentId,
+          file: photoSide,
+          filename: "side",
+          token,
+        });
+        if (!photoSideKey?.trim()) {
+          throw new Error(
+            "La foto lateral no se subió correctamente. Inténtalo de nuevo.",
+          );
+        }
+      }
       for (const [fieldId, file] of Object.entries(customPhotos)) {
-        if (file) formData.append(`custom-photo-${fieldId}`, file);
+        if (file) {
+          const key = await uploadPhotoWithPresignedUrl({
+            assignmentId,
+            file,
+            filename: `custom_${fieldId}`,
+            token,
+          });
+          if (!key?.trim()) {
+            throw new Error(
+              `La foto del campo no se subió correctamente. Inténtalo de nuevo.`,
+            );
+          }
+          customPhotoKeys[fieldId] = key;
+        }
       }
 
-      //   await submitFormResponse(formData);
+      const customFieldsList = assignment.template?.customFields ?? [];
+
+      // 2) answers = { fieldId: value } según FormResponse.answers (Json)
+      const answers: Record<string, unknown> = {
+        ...measurements,
+        ...(photoFrontKey && { front: photoFrontKey }),
+        ...(photoSideKey && { side: photoSideKey }),
+      };
+
+      for (const field of customFieldsList) {
+        if (field.type === "photo") {
+          const key = customPhotoKeys[field.id];
+          if (key) answers[field.id] = key;
+        } else {
+          const val = customValues[field.id];
+          if (val === undefined || val === "") continue;
+          if (field.type === "number") {
+            const n =
+              typeof val === "number"
+                ? val
+                : Number.parseFloat(String(val).replace(",", "."));
+            answers[field.id] = Number.isNaN(n) ? val : n;
+          } else {
+            answers[field.id] = val;
+          }
+        }
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments/${assignmentId}/submit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ answers }),
+        },
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let msg = "Error al enviar el formulario.";
+        try {
+          const errJson = JSON.parse(errText);
+          if (errJson.message) msg = errJson.message;
+        } catch {
+          if (errText) msg = errText.slice(0, 200);
+        }
+        throw new Error(msg);
+      }
+
       setSubmitted(true);
+    } catch (e) {
+      setSubmitError(
+        e instanceof Error ? e.message : "Error al enviar. Inténtalo de nuevo.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +314,7 @@ export default function FillFormPage({
           Tus medidas y fotos se han enviado correctamente a tu entrenador.
         </p>
         <Button
-          onClick={() => router.push("/client/forms")}
+          onClick={() => router.push("/member/forms")}
           className="mt-8 gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
         >
           Volver a formularios
@@ -178,7 +331,7 @@ export default function FillFormPage({
       <div className="flex items-start gap-3">
         <button
           type="button"
-          onClick={() => router.push("/client/forms")}
+          onClick={() => router.push("/member/forms")}
           className="mt-1 rounded-xl p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -236,7 +389,7 @@ export default function FillFormPage({
         </motion.div>
 
         {/* Custom fields */}
-        {template.customFields.length > 0 && (
+        {(template.customFields ?? []).length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -248,8 +401,8 @@ export default function FillFormPage({
             </h3>
 
             <div className="space-y-4">
-              {template.customFields
-                .sort((a, b) => a.order - b.order)
+              {(template.customFields ?? [])
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((field) => (
                   <div key={field.id} className="space-y-1.5">
                     <Label className="text-xs text-gray-400">
@@ -274,17 +427,31 @@ export default function FillFormPage({
                     {field.type === "number" && (
                       <div className="relative">
                         <Input
-                          type="number"
-                          step={0.1}
-                          value={customValues[field.id] ?? ""}
-                          onChange={(e) =>
-                            updateCustomValue(
-                              field.id,
-                              Number.parseFloat(e.target.value) || 0,
-                            )
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="—"
+                          value={
+                            customValues[field.id] !== undefined &&
+                            customValues[field.id] !== ""
+                              ? String(customValues[field.id])
+                              : ""
                           }
-                          placeholder="0"
-                          className="h-10 rounded-xl border-gray-700 bg-gray-800 pr-12 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
+                          onChange={(e) => {
+                            const raw = e.target.value.trim();
+                            if (!/^\d*[.,]?\d*$/.test(raw)) return;
+                            if (raw === "") {
+                              updateCustomValue(field.id, "");
+                              return;
+                            }
+                            if (raw.endsWith(".") || raw.endsWith(",")) {
+                              updateCustomValue(field.id, raw);
+                              return;
+                            }
+                            const n = Number.parseFloat(raw.replace(",", "."));
+                            if (!Number.isNaN(n))
+                              updateCustomValue(field.id, n);
+                          }}
+                          className="h-10 rounded-xl border-gray-700 bg-gray-800 pr-12 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         {field.unit && (
                           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
@@ -352,7 +519,12 @@ export default function FillFormPage({
             )}
             {submitting ? "Enviando..." : "Enviar formulario"}
           </Button>
-          {!isFormValid && (
+          {submitError && (
+            <p className="mt-2 text-center text-sm text-red-400" role="alert">
+              {submitError}
+            </p>
+          )}
+          {!isFormValid && !submitError && (
             <p className="mt-2 text-center text-xs text-gray-500">
               Completa todos los campos obligatorios para enviar
             </p>

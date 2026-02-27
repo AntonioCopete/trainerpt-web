@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -13,46 +13,54 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import type { FormAssignment } from "../../lib/types/forms";
+import { formatAssignmentSentDate } from "../../lib/types/forms";
+import { createSupabaseBrowser } from "../../lib/supabase/browser";
 
 export default function ClientFormsPage() {
-  const router = useRouter();
   const [pending, setPending] = useState<FormAssignment[]>([]);
   const [completed, setCompleted] = useState<FormAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createSupabaseBrowser();
 
-  useEffect(() => {
-    async function load() {
+  const fetchAssignments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+      const data = await res.json();
+      const list: FormAssignment[] = data.assignments ?? data ?? [];
+      setPending(list.filter((a: FormAssignment) => a.status === "pending"));
+      setCompleted(
+        list.filter((a: FormAssignment) => a.status === "completed"),
+      );
+    } catch {
+      setPending([]);
+      setCompleted([]);
+    } finally {
       setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [fetchAssignments]);
 
   const renderAssignment = (
     assignment: FormAssignment,
     index: number,
     isPending: boolean,
   ) => {
-    const date = new Date(assignment.sentAt).toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    const date = formatAssignmentSentDate(assignment);
 
-    return (
-      <motion.div
-        key={assignment.id}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        onClick={() =>
-          isPending ? router.push(`/client/forms/${assignment.id}`) : undefined
-        }
-        className={`group flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-4 transition-colors ${
-          isPending
-            ? "cursor-pointer hover:border-gray-700 hover:bg-gray-900/80"
-            : ""
-        }`}
-      >
+    const content = (
+      <>
         <div className="flex items-center gap-4 min-w-0">
           <div
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
@@ -69,7 +77,7 @@ export default function ClientFormsPage() {
           </div>
           <div className="min-w-0">
             <h3 className="truncate font-semibold text-white">
-              {assignment.template.name}
+              {assignment.template?.name ?? "Formulario"}
             </h3>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <User className="h-3 w-3" />
@@ -100,6 +108,33 @@ export default function ClientFormsPage() {
             </Badge>
           )}
         </div>
+      </>
+    );
+
+    const className = `group flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-4 transition-colors ${
+      isPending
+        ? "cursor-pointer hover:border-gray-700 hover:bg-gray-900/80"
+        : ""
+    }`;
+
+    return (
+      <motion.div
+        key={assignment.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+      >
+        {isPending ? (
+          <Link
+            href={`/member/forms/${assignment.id}`}
+            prefetch={false}
+            className={className}
+          >
+            {content}
+          </Link>
+        ) : (
+          <div className={className}>{content}</div>
+        )}
       </motion.div>
     );
   };

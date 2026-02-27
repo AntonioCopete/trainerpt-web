@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useCallback } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -16,11 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormPreview } from "../../../components/forms/FormPreview";
 import { SendFormDialog } from "../../../components/forms/SendFormDialog";
-import type {
-  FormTemplate,
-  FormAssignment,
-  FormResponse,
-} from "../../../lib/types/forms";
+import type { FormTemplate, FormAssignment } from "../../../lib/types/forms";
+import { formatAssignmentSentDate } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 // import {
 //   getTemplate,
@@ -37,54 +34,53 @@ export default function TemplateDetailPage({
   const router = useRouter();
   const [template, setTemplate] = useState<FormTemplate | null>(null);
   const [assignments, setAssignments] = useState<FormAssignment[]>([]);
-  const [responses, setResponses] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
   const supabase = createSupabaseBrowser();
 
-  const fetchTemplate = useCallback(async () => {
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token;
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        },
-      );
-
-      const data = await res.json();
-
-      const customFields = data.template.schema.filter(
-        (field) => !field.required,
-      );
-      data.template.customFields = [...customFields];
-
-      //   const data = await getTemplates();
-      setTemplate(data.template);
-    } finally {
-      // setLoading(false);
-    }
-  }, []);
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       setLoading(true);
-      fetchTemplate();
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const [templateRes, assignmentsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments?templateId=${id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: "no-store",
+            },
+          ),
+        ]);
 
-      //   const [tpl, assigns, resps] = await Promise.all([
-      //     getTemplate(id),
-      //     getAssignmentsByTemplate(id),
-      //     getResponsesByTemplate(id),
-      //   ]);
-      //   setTemplate(tpl);
-      //   setAssignments(assigns);
-      //   setResponses(resps);
-      setLoading(false);
+        if (cancelled) return;
+
+        if (templateRes.ok) {
+          const data = await templateRes.json();
+          setTemplate(data.template ?? null);
+        }
+        if (assignmentsRes.ok) {
+          const data = await assignmentsRes.json();
+          setAssignments(data.assignments ?? data ?? []);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
+
     load();
-  }, [id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [id, supabase]);
 
   if (loading || !template) {
     return (
@@ -138,24 +134,25 @@ export default function TemplateDetailPage({
         {/* Left: stats & assignments */}
         <div className="space-y-6 lg:col-span-3">
           {/* Quick stats */}
+          {/* Quick stats: contexto de uso, no analytics complejos */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-center">
               <p className="text-2xl font-bold text-white">
                 {assignments.length}
               </p>
-              <p className="text-xs text-gray-500">Enviados</p>
+              <p className="text-xs text-gray-500">Formularios enviados</p>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-center">
               <p className="text-2xl font-bold text-orange-400">
                 {pending.length}
               </p>
-              <p className="text-xs text-gray-500">Pendientes</p>
+              <p className="text-xs text-gray-500">Pendientes de completar</p>
             </div>
             <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 text-center">
               <p className="text-2xl font-bold text-green-400">
                 {completed.length}
               </p>
-              <p className="text-xs text-gray-500">Completados</p>
+              <p className="text-xs text-gray-500">Formularios completados</p>
             </div>
           </div>
 
@@ -163,7 +160,7 @@ export default function TemplateDetailPage({
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
             <div className="border-b border-gray-800 px-5 py-3">
               <h2 className="text-sm font-semibold text-white">
-                Envios realizados
+                Envíos de este formulario
               </h2>
             </div>
 
@@ -176,13 +173,7 @@ export default function TemplateDetailPage({
             ) : (
               <div className="divide-y divide-gray-800">
                 {assignments.map((assignment) => {
-                  const response = responses.find(
-                    (r) => r.assignmentId === assignment.id,
-                  );
-                  const date = new Date(assignment.sentAt).toLocaleDateString(
-                    "es-ES",
-                    { day: "numeric", month: "short" },
-                  );
+                  const date = formatAssignmentSentDate(assignment);
 
                   return (
                     <motion.div
@@ -215,21 +206,19 @@ export default function TemplateDetailPage({
                               <CheckCircle2 className="mr-1 h-3 w-3" />
                               Completado
                             </Badge>
-                            {response && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  router.push(
-                                    `/trainer/forms/${id}/responses/${response.id}`,
-                                  )
-                                }
-                                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Ver
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                router.push(
+                                  `/trainer/assignments/${assignment.id}`,
+                                )
+                              }
+                              className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              Ver respuesta
+                            </Button>
                           </>
                         ) : (
                           <Badge
@@ -254,7 +243,7 @@ export default function TemplateDetailPage({
           <FormPreview
             templateName={template.name}
             templateDescription={template.description}
-            customFields={template.customFields}
+            customFields={template.schema.filter((field) => !field.required)}
           />
         </div>
       </div>

@@ -12,7 +12,7 @@ import { FieldBuilder } from "./FieldBuilder";
 import { FormPreview } from "./FormPreview";
 import { MeasurementFields } from "./MeasurementField";
 import type { CustomField, FormTemplate } from "../../lib/types/forms";
-import { PHOTO_LABELS } from "../../lib/types/forms";
+import { PHOTO_LABELS, nextPlaceholderFieldId } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 
 interface TemplateEditorProps {
@@ -25,22 +25,23 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [customFields, setCustomFields] = useState<CustomField[]>(
-    existing?.customFields ?? [],
+    existing?.schema.filter((field) => !field.required) ?? [],
   );
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const supabase = createSupabaseBrowser();
 
   const addField = useCallback(() => {
+    const existingIds = customFields.map((f) => f.id);
     const newField: CustomField = {
-      id: `new-${Date.now()}`,
+      id: nextPlaceholderFieldId(existingIds),
       type: "text",
       label: "",
       required: false,
       order: customFields.length,
     };
     setCustomFields((prev) => [...prev, newField]);
-  }, [customFields.length]);
+  }, [customFields]);
 
   const updateField = useCallback((updated: CustomField) => {
     setCustomFields((prev) =>
@@ -63,25 +64,34 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
       const payload = {
         name: name.trim(),
         description: description.trim(),
-        customFields: customFields.map(({ id, ...rest }) => rest),
+        customFields: customFields.map((f) => ({
+          id: f.id,
+          type: f.type,
+          label: f.label,
+          required: f.required,
+          order: f.order,
+          unit: f.unit,
+          options: f.options,
+        })),
       };
 
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token;
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          cache: "no-store",
-          body: JSON.stringify(payload),
-        },
-      );
+      const url = existing
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${existing.id}/update`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template`;
+      const method = existing ? "PATCH" : "POST";
 
-      const data = await res.json();
+      await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+
       router.push("/trainer/forms");
     } finally {
       setSaving(false);

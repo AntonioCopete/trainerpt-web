@@ -136,7 +136,7 @@ export function TemplateCard({
         </span>
         {customFields.length > 0 && (
           <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-400">
-            +{customFields.length} personalizados
+            {customFields.length} personalizados
           </span>
         )}
       </div>

@@ -32,7 +32,9 @@ export default function EditTemplatePage({
 
       const data = await res.json();
 
-      const customFields = data.template.filter((field) => !field.required);
+      const customFields = data.template.schema.filter(
+        (field) => !field.required,
+      );
       data.template.customFields = [...customFields];
 
       //   const data = await getTemplates();

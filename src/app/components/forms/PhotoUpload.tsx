@@ -1,15 +1,31 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Camera, Upload, X, User } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import imageCompression from "browser-image-compression";
+import { Camera, Upload, X, User, Loader2, ZoomIn } from "lucide-react";
 import type { PhotoType } from "../../lib/types/forms";
 import { PHOTO_LABELS } from "../../lib/types/forms";
+
+/** Opciones de compresión: buena calidad para fotos de progreso (fitness). */
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 2.5,
+  maxWidthOrHeight: 1920,
+  initialQuality: 0.92,
+  useWebWorker: true,
+  fileType: "image/jpeg" as const,
+};
+
+async function compressImage(file: File): Promise<File> {
+  return imageCompression(file, COMPRESSION_OPTIONS);
+}
 
 interface PhotoUploadProps {
   photoType: PhotoType;
   value: File | string | null;
   onChange?: (file: File | null) => void;
   readOnly?: boolean;
+  /** En modo readOnly: thumbnail más compacto para listados/respuestas */
+  compact?: boolean;
 }
 
 export function PhotoUpload({
@@ -17,22 +33,45 @@ export function PhotoUpload({
   value,
   onChange,
   readOnly = false,
+  compact = false,
 }: PhotoUploadProps) {
   const [preview, setPreview] = useState<string | null>(
     typeof value === "string" ? value : null,
   );
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const previewUrlRef = useRef<string | null>(null);
 
   const handleFile = useCallback(
-    (file: File | null) => {
+    async (file: File | null) => {
       if (!file) {
+        if (previewUrlRef.current) {
+          URL.revokeObjectURL(previewUrlRef.current);
+          previewUrlRef.current = null;
+        }
         setPreview(null);
         onChange?.(null);
         return;
       }
-      const url = URL.createObjectURL(file);
-      setPreview(url);
-      onChange?.(file);
+      if (!file.type.startsWith("image/")) return;
+      setIsProcessing(true);
+      try {
+        const optimized = await compressImage(file);
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        const url = URL.createObjectURL(optimized);
+        previewUrlRef.current = url;
+        setPreview(url);
+        onChange?.(optimized);
+      } catch {
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        const url = URL.createObjectURL(file);
+        previewUrlRef.current = url;
+        setPreview(url);
+        onChange?.(file);
+      } finally {
+        setIsProcessing(false);
+      }
     },
     [onChange],
   );
@@ -62,23 +101,61 @@ export function PhotoUpload({
 
   // Read-only display with image
   if (readOnly) {
+    const hasImage = typeof value === "string" && value;
     return (
       <div className="space-y-1.5">
         <p className="text-xs font-medium text-gray-400">{label}</p>
-        <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-gray-800 bg-gray-800/50">
-          {typeof value === "string" && value ? (
-            <img
-              src={value}
-              alt={label}
-              className="h-full w-full object-cover"
-            />
+        <button
+          type="button"
+          onClick={() => hasImage && setLightboxOpen(true)}
+          className={`relative block w-full overflow-hidden rounded-xl border border-gray-800 bg-gray-800/50 text-left transition-opacity ${
+            compact ? "aspect-square max-h-36" : "aspect-[3/4]"
+          } ${hasImage ? "cursor-zoom-in hover:opacity-90" : "cursor-default"}`}
+        >
+          {hasImage ? (
+            <>
+              <img
+                src={value}
+                alt={label}
+                className="h-full w-full object-cover"
+              />
+              <div
+                className={`absolute rounded-full bg-black/60 text-white ${compact ? "bottom-1 right-1 p-1" : "bottom-2 right-2 p-1.5"}`}
+              >
+                <ZoomIn className={compact ? "h-3 w-3" : "h-4 w-4"} />
+              </div>
+            </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center text-gray-600">
               <User className="h-10 w-10" />
               <span className="mt-2 text-xs">Sin foto</span>
             </div>
           )}
-        </div>
+        </button>
+        {hasImage && lightboxOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Ver ${label} en tamaño completo`}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(false)}
+              className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img
+              src={value}
+              alt={label}
+              className="max-h-[90vh] max-w-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -110,10 +187,16 @@ export function PhotoUpload({
               alt={label}
               className="h-full w-full object-cover"
             />
+            {isProcessing && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900/70">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              </div>
+            )}
             <button
               type="button"
               onClick={() => handleFile(null)}
-              className="absolute right-2 top-2 rounded-full bg-gray-900/80 p-1.5 text-gray-300 hover:bg-gray-900 hover:text-white transition-colors"
+              disabled={isProcessing}
+              className="absolute right-2 top-2 rounded-full bg-gray-900/80 p-1.5 text-gray-300 hover:bg-gray-900 hover:text-white transition-colors disabled:opacity-50"
             >
               <X className="h-4 w-4" />
             </button>
@@ -121,14 +204,20 @@ export function PhotoUpload({
         ) : (
           <label className="flex h-full cursor-pointer flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-400 transition-colors">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800">
-              {isDragging ? (
+              {isProcessing ? (
+                <Loader2 className="h-5 w-5 animate-spin text-red-400" />
+              ) : isDragging ? (
                 <Upload className="h-5 w-5 text-red-400" />
               ) : (
                 <Camera className="h-5 w-5" />
               )}
             </div>
             <span className="text-xs text-center px-4">
-              {isDragging ? "Suelta la imagen" : "Arrastra o pulsa para subir"}
+              {isProcessing
+                ? "Optimizando imagen..."
+                : isDragging
+                  ? "Suelta la imagen"
+                  : "Arrastra o pulsa para subir"}
             </span>
             <span className="text-[10px] text-gray-600">
               {photoType === "front" ? "Vista frontal" : "Vista lateral"}
@@ -137,6 +226,7 @@ export function PhotoUpload({
               type="file"
               accept="image/*"
               className="sr-only"
+              disabled={isProcessing}
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />
           </label>

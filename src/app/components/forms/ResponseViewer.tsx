@@ -11,13 +11,17 @@ interface ResponseViewerProps {
 }
 
 export function ResponseViewer({ response }: ResponseViewerProps) {
-  const date = new Date(response.submittedAt).toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const submittedAt = response.submittedAt;
+  const date =
+    submittedAt && !Number.isNaN(new Date(submittedAt).getTime())
+      ? new Date(submittedAt).toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—";
 
   return (
     <div className="space-y-6">
@@ -45,13 +49,19 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
           Fotos de progreso
         </h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <PhotoUpload
             photoType="front"
             value={response.photos.front}
             readOnly
+            compact
           />
-          <PhotoUpload photoType="side" value={response.photos.side} readOnly />
+          <PhotoUpload
+            photoType="side"
+            value={response.photos.side}
+            readOnly
+            compact
+          />
         </div>
       </div>
 
@@ -63,10 +73,9 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {response.customFieldValues.map((fv) => {
-              const templateField =
-                response.assignment.template.customFields.find(
-                  (f) => f.id === fv.fieldId,
-                );
+              const templateField = (
+                response.assignment.template?.customFields ?? []
+              ).find((f) => f.id === fv.fieldId);
               return (
                 <div
                   key={fv.fieldId}

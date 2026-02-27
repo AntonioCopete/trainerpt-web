@@ -12,18 +12,31 @@ import { createSupabaseBrowser } from "../lib/supabase/browser";
 import { useRouter } from "next/navigation";
 import { clientRedirectByRole } from "@/lib/utils";
 
-type AccountType = "trainer" | "client" | null;
+type AccountType = "trainer" | "member" | null;
 
-export default function OnboardingPageComponent() {
-  const [step, setStep] = useState(1);
-  const [accountType, setAccountType] = useState<AccountType>(null);
+interface OnboardingPageProps {
+  initialRole?: string | null;
+  initialFullName?: string;
+}
+
+export default function OnboardingPageComponent({
+  initialRole = null,
+  initialFullName = "",
+}: OnboardingPageProps) {
+  // Si el backend ya ha decidido un rol, no permitimos cambiarlo y vamos directo a datos personales.
+  const fixedRole: AccountType =
+    initialRole === "trainer" ? "trainer" : initialRole ? "member" : null;
+
+  const [step, setStep] = useState(fixedRole ? 2 : 1);
+  const [accountType, setAccountType] = useState<AccountType>(fixedRole);
   const [formData, setFormData] = useState({
-    fullName: "",
+    fullName: initialFullName ?? "",
   });
   const supabase = createSupabaseBrowser();
   const router = useRouter();
 
   const handleAccountTypeSelect = (type: AccountType) => {
+    if (fixedRole) return; // si viene invitado o con rol predefinido, no puede cambiarlo
     setAccountType(type);
   };
 
@@ -257,16 +270,16 @@ export default function OnboardingPageComponent() {
 
                     {/* Client Card */}
                     <motion.button
-                      onClick={() => handleAccountTypeSelect("client")}
+                      onClick={() => handleAccountTypeSelect("member")}
                       className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${
-                        accountType === "client"
+                        accountType === "member"
                           ? "border-red-500 bg-gradient-to-br from-red-500/10 to-orange-500/10"
                           : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      {accountType === "client" && (
+                      {accountType === "member" && (
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -277,7 +290,7 @@ export default function OnboardingPageComponent() {
                       )}
                       <div
                         className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 ${
-                          accountType === "client"
+                          accountType === "member"
                             ? "bg-gradient-to-r from-red-500 to-orange-500"
                             : "bg-gray-700 group-hover:bg-gray-600"
                         }`}
@@ -302,7 +315,7 @@ export default function OnboardingPageComponent() {
                           >
                             <div
                               className={`w-1.5 h-1.5 rounded-full ${
-                                accountType === "client"
+                                accountType === "member"
                                   ? "bg-orange-500"
                                   : "bg-gray-500"
                               }`}
@@ -346,11 +359,16 @@ export default function OnboardingPageComponent() {
                       />
                     </div>
 
-                    {/* Account Type Summary - Clickable to go back */}
+                    {/* Account Type Summary - Clickable to go back solo si no hay rol fijo */}
                     <button
                       type="button"
-                      onClick={() => setStep(1)}
-                      className="w-full bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors text-left"
+                      onClick={fixedRole ? undefined : () => setStep(1)}
+                      className={`w-full bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-left ${
+                        fixedRole
+                          ? ""
+                          : "hover:border-gray-600 transition-colors"
+                      }`}
+                      disabled={!!fixedRole}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -372,9 +390,11 @@ export default function OnboardingPageComponent() {
                             </p>
                           </div>
                         </div>
-                        <span className="text-sm text-gray-400 hover:text-white transition-colors">
-                          Cambiar
-                        </span>
+                        {!fixedRole && (
+                          <span className="text-sm text-gray-400 hover:text-white transition-colors">
+                            Cambiar
+                          </span>
+                        )}
                       </div>
                     </button>
                   </div>

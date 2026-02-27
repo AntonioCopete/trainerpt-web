@@ -19,36 +19,71 @@ import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
 import { createSupabaseBrowser } from "../lib/supabase/browser";
 
-export default function RegisterPageComponent() {
-  const [loading, setLoading] = useState(false);
+interface RegisterPageComponentProps {
+  invitationCode?: string | null;
+}
+
+export default function RegisterPageComponent({
+  invitationCode,
+}: RegisterPageComponentProps) {
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicError, setMagicError] = useState<string | null>(null);
   const supabase = createSupabaseBrowser();
 
   //   const { register } = useAuth();
   //   const { toast } = useToast();
 
   const handleGoogle = () => {
-    setLoading(true);
+    setGoogleLoading(true);
+    const inviteParam = invitationCode
+      ? `?invite=${encodeURIComponent(invitationCode)}`
+      : "";
     supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${location.origin}/auth/callback${inviteParam}`,
       },
     });
     // SignInWithGoogle()
     // Aquí iría la lógica para iniciar sesión con Google
   };
 
-  const handleMagicLink = async (event: any) => {
+  const handleMagicLink = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const email = event.target.email.value;
-    // Aquí iría la lógica para enviar el magic link
-    // const actionCodeSettings = {
-    //   url: "http://localhost:3000/login/complete",
-    //   handleCodeInApp: true,
-    // };
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
 
-    // Guarda el email para completar el login
-    //   window.localStorage.setItem("emailForSignIn", email);
+    if (!email) return;
+
+    setMagicLoading(true);
+    setMagicSent(false);
+    setMagicError(null);
+
+    try {
+      const inviteParam = invitationCode
+        ? `?invite=${encodeURIComponent(invitationCode)}`
+        : "";
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback${inviteParam}`,
+        },
+      });
+
+      if (error) {
+        setMagicError(error.message);
+        return;
+      }
+
+      setMagicSent(true);
+    } catch (err) {
+      setMagicError("No hemos podido enviar el enlace. Inténtalo de nuevo.");
+    } finally {
+      setMagicLoading(false);
+    }
   };
 
   return (
@@ -72,9 +107,9 @@ export default function RegisterPageComponent() {
               variant="outline"
               className="w-full gap-2"
               onClick={handleGoogle}
-              disabled={loading}
+              disabled={googleLoading}
             >
-              {loading ? (
+              {googleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <FcGoogle className="h-4 w-4" />
@@ -93,6 +128,7 @@ export default function RegisterPageComponent() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -101,7 +137,14 @@ export default function RegisterPageComponent() {
                 />
               </div>
 
-              <Button type="submit" className="w-full gap-2">
+              <Button
+                type="submit"
+                className="w-full gap-2"
+                disabled={magicLoading}
+              >
+                {magicLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
                 Enviarme magic link
               </Button>
 
@@ -109,6 +152,16 @@ export default function RegisterPageComponent() {
                 Te mandaremos un enlace para entrar. Si no lo ves, revisa
                 spam/promociones.
               </p>
+
+              {magicSent && !magicError && (
+                <p className="text-xs text-emerald-400">
+                  Enlace enviado. Revisa tu correo para continuar.
+                </p>
+              )}
+
+              {magicError && (
+                <p className="text-xs text-red-400">{magicError}</p>
+              )}
             </form>
           </CardContent>
         </Card>

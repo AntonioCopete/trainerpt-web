@@ -3,14 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ClipboardList, Search } from "lucide-react";
+import { Plus, ClipboardList, Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TemplateCard } from "../../components/forms/TemplateCard";
 import { SendFormDialog } from "../../components/forms/SendFormDialog";
+import { InviteClientDialog } from "../../components/InviteClientDialog";
 import type { FormTemplate } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
-// import { getTemplates, deleteTemplate } from "@/lib/api/forms";
+import { toast } from "sonner";
 
 export default function TrainerFormsPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function TrainerFormsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(
     null,
   );
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const supabase = createSupabaseBrowser();
 
   const fetchTemplates = useCallback(async () => {
@@ -65,23 +67,57 @@ export default function TrainerFormsPage() {
     setSendDialogOpen(true);
   };
 
+  const duplicateTemplate = async (id: string) => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}/duplicate`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    if (res.ok && data.template) {
+      toast.success("Plantilla duplicada correctamente");
+      setTemplates((prev) => [...prev, data.template]);
+    } else {
+      toast.error("Error al duplicar la plantilla");
+      console.error(data);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Formularios</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Plantillas de formularios
+          </h1>
           <p className="mt-1 text-sm text-gray-400">
-            Crea y gestiona plantillas de seguimiento para tus clientes
+            Diseña los formularios que luego enviarás a tus clientes para su
+            seguimiento
           </p>
         </div>
-        <Button
-          onClick={() => router.push("/trainer/forms/new")}
-          className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20"
-        >
-          <Plus className="h-4 w-4" />
-          Nueva plantilla
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setInviteDialogOpen(true)}
+            className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+          >
+            <UserPlus className="h-4 w-4" />
+            Invitar cliente
+          </Button>
+          <Button
+            onClick={() => router.push("/trainer/forms/new")}
+            className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva plantilla
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -142,7 +178,7 @@ export default function TrainerFormsPage() {
                 index={i}
                 onEdit={(id) => router.push(`/trainer/forms/${id}/edit`)}
                 onDuplicate={(id) => {
-                  /* TODO: connect to API */
+                  duplicateTemplate(id);
                 }}
                 onDelete={handleDelete}
                 onSend={handleSend}
@@ -159,6 +195,10 @@ export default function TrainerFormsPage() {
         onOpenChange={setSendDialogOpen}
         template={selectedTemplate}
         onSent={fetchTemplates}
+      />
+      <InviteClientDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
       />
     </div>
   );

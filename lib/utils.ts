@@ -11,8 +11,8 @@ export const clientRedirectByRole = (router, role?: string) => {
     case "trainer":
       router.replace("/trainer");
       break;
-    case "client":
-      router.replace("/client");
+    case "member":
+      router.replace("/member");
       break;
     default:
       router.replace("/onboarding"); // fallback
@@ -24,8 +24,8 @@ export const serverRedirectByRole = (redirect, role?: string) => {
     case "trainer":
       redirect("/trainer");
       break;
-    case "client":
-      redirect("/client");
+    case "member":
+      redirect("/member");
       break;
     default:
       redirect("/onboarding"); // fallback

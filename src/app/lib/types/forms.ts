@@ -83,6 +83,8 @@ export interface FormTemplate {
   name: string;
   description: string;
   schema: CustomField[];
+  /** Optional; when present (e.g. from API or derived from schema) used for fill-form UI */
+  customFields?: CustomField[];
   createdAt: string;
   updatedAt: string;
 }
@@ -90,7 +92,8 @@ export interface FormTemplate {
 export interface CreateTemplatePayload {
   name: string;
   description: string;
-  customFields: Omit<CustomField, "id">[];
+  /** Custom fields including stable, i18n-friendly id (e.g. "weight", "body_fat") */
+  customFields: CustomField[];
 }
 
 export interface UpdateTemplatePayload extends CreateTemplatePayload {
@@ -103,14 +106,48 @@ export type FormAssignmentStatus = "pending" | "completed";
 
 export interface FormAssignment {
   id: string;
-  templateId: string;
-  template: FormTemplate;
+  templateId: string | null;
+  template: FormTemplate | null;
   trainerId: string;
   clientId: string;
   clientName: string;
   status: FormAssignmentStatus;
-  sentAt: string;
-  completedAt?: string;
+  /** Fecha de envío; backend usa createdAt según Prisma */
+  createdAt: string;
+  /** @deprecated Usar createdAt; mantener por compatibilidad con backend */
+  sentAt?: string;
+  /** Fecha límite opcional para completar */
+  dueAt?: string | null;
+}
+
+/** Fecha de envío para mostrar; acepta createdAt o sentAt (legacy) */
+export function formatAssignmentSentDate(assignment: {
+  createdAt?: string | null;
+  sentAt?: string | null;
+}): string {
+  const raw = assignment.createdAt ?? assignment.sentAt;
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** Fecha de respuesta (FormResponse.submittedAt) */
+export function formatResponseDate(submittedAt: string | undefined): string {
+  if (!submittedAt) return "—";
+  const d = new Date(submittedAt);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export interface SendFormPayload {
@@ -168,9 +205,34 @@ export interface SubmitFormPayload {
 
 // --- Client (minimal, for selecting recipients) ---
 
-export interface ClientSummary {
+export interface MemberSummary {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   avatarUrl?: string;
+}
+
+// --- Field ID: clave estable, independiente del idioma (ej: weight, body_fat) ---
+
+/**
+ * Devuelve un id placeholder único para un campo nuevo (ej: field_0, field_1).
+ * El usuario debe sustituirlo por una clave estándar (inglés, minúsculas).
+ */
+export function nextPlaceholderFieldId(existingIds: string[]): string {
+  const set = new Set(existingIds);
+  let n = 0;
+  while (set.has(`field_${n}`)) n++;
+  return `field_${n}`;
+}
+
+/** Normaliza input del usuario a id válido: solo [a-z0-9_], minúsculas */
+export function normalizeFieldId(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 64) || ""
+  );
 }

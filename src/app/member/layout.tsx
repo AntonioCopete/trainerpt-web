@@ -7,25 +7,25 @@ import { ClipboardList, Dumbbell, UtensilsCrossed } from "lucide-react";
 const NAV_ITEMS = [
   {
     label: "Formularios",
-    href: "/client/forms",
+    href: "/member/forms",
     icon: ClipboardList,
     active: true,
   },
   {
     label: "Rutinas",
-    href: "/client/routines",
+    href: "/member/routines",
     icon: Dumbbell,
     active: false,
   },
   {
     label: "Dietas",
-    href: "/client/diets",
+    href: "/member/diets",
     icon: UtensilsCrossed,
     active: false,
   },
 ];
 
-export default function ClientLayout({
+export default function MemberLayout({
   children,
 }: {
   children: React.ReactNode;

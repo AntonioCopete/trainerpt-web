@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Dumbbell, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, Dumbbell, UtensilsCrossed, Users } from "lucide-react";
 
 const NAV_ITEMS = [
+  {
+    label: "Clientes",
+    href: "/trainer/members",
+    icon: Users,
+    active: true,
+  },
   {
     label: "Formularios",
     href: "/trainer/forms",
