@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  GripVertical,
-  Trash2,
-  Plus,
-  Type,
-  Hash,
-  List,
-  Camera,
-  X,
-} from "lucide-react";
+import { GripVertical, Trash2, Type, Hash, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -22,11 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  CustomField,
-  CustomFieldType,
-  SelectOption,
-} from "../../lib/types/forms";
+import type { CustomField, CustomFieldType } from "../../lib/types/forms";
 
 const FIELD_TYPE_OPTIONS: {
   value: CustomFieldType;
@@ -34,8 +21,7 @@ const FIELD_TYPE_OPTIONS: {
   icon: React.ElementType;
 }[] = [
   { value: "text", label: "Texto", icon: Type },
-  { value: "number", label: "Numero", icon: Hash },
-  { value: "select", label: "Seleccion", icon: List },
+  { value: "number", label: "Número", icon: Hash },
   { value: "photo", label: "Foto", icon: Camera },
 ];
 
@@ -55,33 +41,6 @@ export function FieldBuilder({
   const [isExpanded, setIsExpanded] = useState(true);
   const Icon =
     FIELD_TYPE_OPTIONS.find((o) => o.value === field.type)?.icon ?? Type;
-
-  const addOption = () => {
-    const newOpt: SelectOption = {
-      id: `opt-${Date.now()}`,
-      label: "",
-    };
-    onUpdate({
-      ...field,
-      options: [...(field.options ?? []), newOpt],
-    });
-  };
-
-  const updateOption = (optId: string, label: string) => {
-    onUpdate({
-      ...field,
-      options: (field.options ?? []).map((o) =>
-        o.id === optId ? { ...o, label } : o,
-      ),
-    });
-  };
-
-  const removeOption = (optId: string) => {
-    onUpdate({
-      ...field,
-      options: (field.options ?? []).filter((o) => o.id !== optId),
-    });
-  };
 
   return (
     <div className="rounded-xl border border-gray-800 bg-gray-900/60 overflow-hidden">
@@ -142,7 +101,6 @@ export function FieldBuilder({
                   onUpdate({
                     ...field,
                     type: v,
-                    options: v === "select" ? (field.options ?? []) : undefined,
                     unit: v === "number" ? (field.unit ?? "") : undefined,
                   })
                 }
@@ -181,42 +139,6 @@ export function FieldBuilder({
                 placeholder="Ej: kg, cm, %"
                 className="h-9 w-32 rounded-lg border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
               />
-            </div>
-          )}
-
-          {/* Options (for select fields) */}
-          {field.type === "select" && (
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-400">Opciones</Label>
-              <div className="space-y-2">
-                {(field.options ?? []).map((opt) => (
-                  <div key={opt.id} className="flex items-center gap-2">
-                    <Input
-                      value={opt.label}
-                      onChange={(e) => updateOption(opt.id, e.target.value)}
-                      placeholder="Nombre de la opcion"
-                      className="h-9 flex-1 rounded-lg border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeOption(opt.id)}
-                      className="rounded p-1 text-gray-600 hover:text-red-400 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addOption}
-                className="gap-1.5 border-gray-700 bg-transparent text-gray-400 hover:bg-gray-800 hover:text-white"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Agregar opcion
-              </Button>
             </div>
           )}
 

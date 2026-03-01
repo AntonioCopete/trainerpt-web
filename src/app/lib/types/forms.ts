@@ -4,12 +4,7 @@
 
 // --- Field Types ---
 
-export type CustomFieldType = "text" | "number" | "select" | "photo";
-
-export interface SelectOption {
-  id: string;
-  label: string;
-}
+export type CustomFieldType = "text" | "number" | "photo";
 
 export interface CustomField {
   id: string;
@@ -18,8 +13,6 @@ export interface CustomField {
   required: boolean;
   /** Only for "number" fields */
   unit?: string;
-  /** Only for "select" fields */
-  options?: SelectOption[];
   /** Display order */
   order: number;
 }

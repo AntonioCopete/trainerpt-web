@@ -30,26 +30,27 @@ export default function EditTemplatePage({
         },
       );
 
+      if (!res.ok) {
+        setTemplate(null);
+        return;
+      }
+
       const data = await res.json();
-
-      const customFields = data.template.schema.filter(
-        (field) => !field.required,
-      );
-      data.template.customFields = [...customFields];
-
-      //   const data = await getTemplates();
-      setTemplate(data.template);
+      const tpl = data.template;
+      if (!tpl) {
+        setTemplate(null);
+        return;
+      }
+      const schema = tpl.schema ?? [];
+      tpl.customFields = schema.filter((field) => !field.required);
+      setTemplate(tpl);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [id]);
   useEffect(() => {
     fetchTemplate();
-    // getTemplate(id).then((tpl) => {
-    //   setTemplate(tpl);
-    //   setLoading(false);
-    // });
-  }, [id]);
+  }, [fetchTemplate]);
 
   if (loading) {
     return (

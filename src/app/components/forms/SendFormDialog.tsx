@@ -50,7 +50,6 @@ export function SendFormDialog({
         },
       );
       const data = await res.json();
-      console;
       setMembers(data.members ?? []);
     } catch {
       setMembers([]);
@@ -63,14 +62,14 @@ export function SendFormDialog({
       setSearch("");
       setSelectedMemberId(preselectedMemberId ?? null);
     }
-  }, [open, preselectedMemberId]);
+  }, [open, preselectedMemberId, getMembers]);
 
   const filteredMembers =
     members && members.length > 0
       ? members.filter(
           (m) =>
-            m.fullName.toLowerCase().includes(search.toLowerCase()) ||
-            m.fullName.toLowerCase().includes(search.toLowerCase()),
+            m.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+            m.email?.toLowerCase().includes(search.toLowerCase()),
         )
       : [];
 
@@ -103,7 +102,7 @@ export function SendFormDialog({
       // onSent?.();
       // onOpenChange(false);
     } catch {
-      // Error handling would go here
+      toast.error("Error al enviar el formulario");
     } finally {
       setSending(false);
     }

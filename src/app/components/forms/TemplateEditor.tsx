@@ -14,6 +14,7 @@ import { MeasurementFields } from "./MeasurementField";
 import type { CustomField, FormTemplate } from "../../lib/types/forms";
 import { PHOTO_LABELS, nextPlaceholderFieldId } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
+import { toast } from "sonner";
 
 interface TemplateEditorProps {
   /** If provided, we're editing an existing template */
@@ -25,7 +26,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [customFields, setCustomFields] = useState<CustomField[]>(
-    existing?.schema.filter((field) => !field.required) ?? [],
+    (existing?.schema ?? []).filter((field) => !field.required),
   );
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,7 +72,6 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
           required: f.required,
           order: f.order,
           unit: f.unit,
-          options: f.options,
         })),
       };
 
@@ -82,7 +82,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
         : `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template`;
       const method = existing ? "PATCH" : "POST";
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -92,7 +92,17 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
         body: JSON.stringify(payload),
       });
 
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || "Error al guardar la plantilla");
+      }
+
+      toast.success("Plantilla guardada correctamente");
       router.push("/trainer/forms");
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Error al guardar la plantilla",
+      );
     } finally {
       setSaving(false);
     }

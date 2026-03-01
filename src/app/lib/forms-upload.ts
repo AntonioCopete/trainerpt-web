@@ -83,5 +83,7 @@ export async function getPresignedPhotoUrl(
   );
   if (!res.ok) throw new Error("No se pudo obtener la URL de la foto");
   const data = (await res.json()) as { url?: string };
-  return data.url ?? key;
+  const url = data.url?.trim();
+  if (!url) throw new Error("URL de foto no válida");
+  return url;
 }

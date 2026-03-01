@@ -1,6 +1,6 @@
 "use client";
 
-import { Ruler, Camera, Type, Hash, List } from "lucide-react";
+import { Ruler, Camera, Type, Hash } from "lucide-react";
 import type { CustomField } from "../../lib/types/forms";
 import {
   BASIC_LABELS,
@@ -25,7 +25,6 @@ export function FormPreview({
   const typeIcons: Record<string, React.ElementType> = {
     text: Type,
     number: Hash,
-    select: List,
     photo: Camera,
   };
 

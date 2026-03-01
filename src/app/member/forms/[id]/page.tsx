@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MeasurementFields } from "../../../components/forms/MeasurementField";
 import { PhotoUpload } from "../../../components/forms/PhotoUpload";
 import type {
@@ -83,22 +76,24 @@ export default function FillFormPage({
           setAssignment(null);
           return;
         }
-        const template = raw.template ?? raw;
-        const customFields: CustomField[] = Array.isArray(template.customFields)
-          ? template.customFields
-          : Array.isArray(template.schema)
-            ? template.schema
-                .filter((f: CustomField) => !f.required)
-                .map((f: CustomField, i: number) => ({
-                  ...f,
-                  id: f.id ?? `cf-${i}`,
-                  order: f.order ?? i,
-                }))
-            : [];
-        setAssignment({
-          ...raw,
-          template: { ...template, customFields },
-        });
+        const rawTemplate = raw.template ?? raw;
+        const schemaSource =
+          rawTemplate?.customFields ??
+          rawTemplate?.schema ??
+          raw.schemaSnapshot;
+        const customFields: CustomField[] = Array.isArray(schemaSource)
+          ? schemaSource
+              .filter((f: CustomField) => !f.required)
+              .map((f: CustomField, i: number) => ({
+                ...f,
+                id: f.id ?? `field_${f.order ?? i}`,
+                order: f.order ?? i,
+              }))
+          : [];
+        const template = rawTemplate
+          ? { ...rawTemplate, customFields }
+          : { name: "Formulario", description: "", customFields };
+        setAssignment({ ...raw, template });
       } catch {
         if (!cancelled) setAssignment(null);
       } finally {
@@ -459,28 +454,6 @@ export default function FillFormPage({
                           </span>
                         )}
                       </div>
-                    )}
-
-                    {field.type === "select" && (
-                      <Select
-                        value={(customValues[field.id] as string) ?? ""}
-                        onValueChange={(v) => updateCustomValue(field.id, v)}
-                      >
-                        <SelectTrigger className="h-10 rounded-xl border-gray-700 bg-gray-800 text-white">
-                          <SelectValue placeholder="Selecciona una opcion..." />
-                        </SelectTrigger>
-                        <SelectContent className="border-gray-800 bg-gray-900 text-gray-300">
-                          {(field.options ?? []).map((opt) => (
-                            <SelectItem
-                              key={opt.id}
-                              value={opt.label}
-                              className="focus:bg-gray-800 focus:text-white"
-                            >
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     )}
 
                     {field.type === "photo" && (

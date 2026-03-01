@@ -78,11 +78,26 @@ export default function AssignmentDetailPage({
           template?.schema ??
           rawAssignment.schemaSnapshot;
         const customFields: CustomField[] = Array.isArray(schemaSource)
-          ? schemaSource.filter((f: CustomField) => !f.required)
+          ? schemaSource
+              .filter((f: CustomField) => !f.required)
+              .map((f: CustomField, i: number) => ({
+                ...f,
+                id: f.id ?? `field_${f.order ?? i}`,
+              }))
           : [];
+        const member = rawAssignment.member;
         const assignmentData: FormAssignment = {
           ...rawAssignment,
           template: template ? { ...template, customFields } : null,
+          clientId:
+            rawAssignment.clientId ??
+            rawAssignment.memberId ??
+            rawAssignment.id,
+          clientName:
+            rawAssignment.clientName ??
+            member?.fullName ??
+            member?.email ??
+            "Cliente",
         };
         setAssignment(assignmentData);
 

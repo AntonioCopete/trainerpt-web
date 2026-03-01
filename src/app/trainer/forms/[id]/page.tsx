@@ -16,7 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormPreview } from "../../../components/forms/FormPreview";
 import { SendFormDialog } from "../../../components/forms/SendFormDialog";
-import type { FormTemplate, FormAssignment } from "../../../lib/types/forms";
+import type {
+  FormTemplate,
+  FormAssignment,
+  MemberSummary,
+} from "../../../lib/types/forms";
 import { formatAssignmentSentDate } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 // import {
@@ -172,67 +176,70 @@ export default function TemplateDetailPage({
               </div>
             ) : (
               <div className="divide-y divide-gray-800">
-                {assignments.map((assignment) => {
-                  const date = formatAssignmentSentDate(assignment);
+                {assignments.map(
+                  (assignment: FormAssignment & { member: MemberSummary }) => {
+                    const date = formatAssignmentSentDate(assignment);
 
-                  return (
-                    <motion.div
-                      key={assignment.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-between px-5 py-3 hover:bg-gray-800/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800">
-                          <User className="h-4 w-4 text-gray-400" />
+                    return (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center justify-between px-5 py-3 hover:bg-gray-800/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800">
+                            <User className="h-4 w-4 text-gray-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">
+                              {assignment.member?.fullName} -{" "}
+                              {assignment.member?.email}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Enviado el {date}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            {assignment.clientName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Enviado el {date}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        {assignment.status === "completed" ? (
-                          <>
+                        <div className="flex items-center gap-2">
+                          {assignment.status === "completed" ? (
+                            <>
+                              <Badge
+                                variant="secondary"
+                                className="border-0 bg-green-500/10 text-green-400 text-xs"
+                              >
+                                <CheckCircle2 className="mr-1 h-3 w-3" />
+                                Completado
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  router.push(
+                                    `/trainer/assignments/${assignment.id}`,
+                                  )
+                                }
+                                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Ver respuesta
+                              </Button>
+                            </>
+                          ) : (
                             <Badge
                               variant="secondary"
-                              className="border-0 bg-green-500/10 text-green-400 text-xs"
+                              className="border-0 bg-orange-500/10 text-orange-400 text-xs"
                             >
-                              <CheckCircle2 className="mr-1 h-3 w-3" />
-                              Completado
+                              <Clock className="mr-1 h-3 w-3" />
+                              Pendiente
                             </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                router.push(
-                                  `/trainer/assignments/${assignment.id}`,
-                                )
-                              }
-                              className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              Ver respuesta
-                            </Button>
-                          </>
-                        ) : (
-                          <Badge
-                            variant="secondary"
-                            className="border-0 bg-orange-500/10 text-orange-400 text-xs"
-                          >
-                            <Clock className="mr-1 h-3 w-3" />
-                            Pendiente
-                          </Badge>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  },
+                )}
               </div>
             )}
           </div>
