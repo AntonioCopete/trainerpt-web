@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const invite = url.searchParams.get("invite");
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing_code", url));
+    return NextResponse.redirect(new URL("/join?error=missing_code", url));
   }
 
   const cookieStore = await cookies();
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
   if (error) {
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error.message)}`, url),
+      new URL(`/join?error=${encodeURIComponent(error.message)}`, url),
     );
   }
 
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   } = await supabase.auth.getSession();
   const token = session?.access_token;
   if (!token) {
-    return NextResponse.redirect(new URL("/login?error=no_token", url));
+    return NextResponse.redirect(new URL("/join?error=no_token", url));
   }
 
   // Aseguramos que el usuario exista en la base de datos

@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
   });
 
   if (!res.ok) {
-    return redirect("/login?error=me_failed");
+    return redirect("/join?error=me_failed");
   }
 
   const me = await res.json();
