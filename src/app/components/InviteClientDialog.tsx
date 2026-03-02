@@ -57,7 +57,18 @@ export function InviteClientDialog({
       );
 
       if (!res.ok) {
-        setError("No se ha podido generar el enlace. Inténtalo de nuevo.");
+        let msg = "No se ha podido generar el enlace. Inténtalo de nuevo.";
+        try {
+          const errData = await res.json();
+          if (errData.message?.includes("Maximum pending invites")) {
+            msg = "Has alcanzado el límite de 100 invitaciones pendientes.";
+          } else if (errData.message) {
+            msg = errData.message;
+          }
+        } catch {
+          // keep default message
+        }
+        setError(msg);
         return;
       }
 

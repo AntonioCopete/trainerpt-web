@@ -97,10 +97,14 @@ export function SendFormDialog({
         onSent?.();
         onOpenChange(false);
       } else {
-        toast.error("Error al enviar el formulario");
+        let msg = "Error al enviar el formulario";
+        if (data.message?.includes("already has a pending assignment")) {
+          msg = "Este cliente ya tiene un formulario pendiente de este tipo";
+        } else if (data.message) {
+          msg = data.message;
+        }
+        toast.error(msg);
       }
-      // onSent?.();
-      // onOpenChange(false);
     } catch {
       toast.error("Error al enviar el formulario");
     } finally {
