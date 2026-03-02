@@ -29,7 +29,7 @@ export default function Header({ isLogged }) {
             className="bg-background/80 backdrop-blur-sm"
             asChild
           >
-            <Link href="/register">Iniciar Sesión</Link>
+            <Link href="/join">Iniciar Sesión</Link>
           </Button>
         </>
       ) : (

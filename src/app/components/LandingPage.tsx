@@ -485,7 +485,7 @@ export function LandingPage() {
               className="text-lg px-12 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
               asChild
             >
-              <Link href="/register">
+              <Link href="/join">
                 EMPIEZA GRATIS
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -892,7 +892,7 @@ export function LandingPage() {
               className="text-xl px-16 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
               asChild
             >
-              <Link href="/register">
+              <Link href="/join">
                 EMPIEZA GRATIS
                 <ArrowRight className="ml-2 h-6 w-6" />
               </Link>
