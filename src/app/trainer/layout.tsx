@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardList, Dumbbell, UtensilsCrossed, Users } from "lucide-react";
+import { Toaster } from "sonner";
 
 const NAV_ITEMS = [
   {
@@ -87,6 +88,17 @@ export default function TrainerLayout({
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {children}
       </main>
+
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: "#1f2937",
+            border: "1px solid #374151",
+            color: "#f3f4f6",
+          },
+        }}
+      />
     </div>
   );
 }
