@@ -9,6 +9,7 @@ import {
   ClipboardList,
   ArrowRight,
   User,
+  Eye,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -99,23 +100,27 @@ export default function ClientFormsPage() {
               <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-white transition-colors" />
             </>
           ) : (
-            <Badge
-              variant="secondary"
-              className="border-0 bg-green-500/10 text-green-400 text-xs"
-            >
-              <CheckCircle2 className="mr-1 h-3 w-3" />
-              Completado
-            </Badge>
+            <>
+              <Badge
+                variant="secondary"
+                className="border-0 bg-green-500/10 text-green-400 text-xs"
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                Completado
+              </Badge>
+              <Eye className="h-4 w-4 text-gray-600 group-hover:text-white transition-colors" />
+            </>
           )}
         </div>
       </>
     );
 
-    const className = `group flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-4 transition-colors ${
-      isPending
-        ? "cursor-pointer hover:border-gray-700 hover:bg-gray-900/80"
-        : ""
-    }`;
+    const className =
+      "group flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-4 transition-colors cursor-pointer hover:border-gray-700 hover:bg-gray-900/80";
+
+    const href = isPending
+      ? `/member/forms/${assignment.id}`
+      : `/member/forms/${assignment.id}/response`;
 
     return (
       <motion.div
@@ -124,17 +129,9 @@ export default function ClientFormsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
       >
-        {isPending ? (
-          <Link
-            href={`/member/forms/${assignment.id}`}
-            prefetch={false}
-            className={className}
-          >
-            {content}
-          </Link>
-        ) : (
-          <div className={className}>{content}</div>
-        )}
+        <Link href={href} prefetch={false} className={className}>
+          {content}
+        </Link>
       </motion.div>
     );
   };
