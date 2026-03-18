@@ -103,8 +103,7 @@ export function PhotoUpload({
   if (readOnly) {
     const hasImage = typeof value === "string" && value;
     return (
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-gray-400">{label}</p>
+      <div>
         <button
           type="button"
           onClick={() => hasImage && setLightboxOpen(true)}
