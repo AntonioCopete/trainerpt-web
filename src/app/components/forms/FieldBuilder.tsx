@@ -4,8 +4,6 @@ import { useState } from "react";
 import { GripVertical, Trash2, Type, Hash, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -129,26 +127,47 @@ export function FieldBuilder({
             </div>
           </div>
 
-          {/* Unit (for number fields) */}
-          {field.type === "number" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-400">Unidad (opcional)</Label>
-              <Input
-                value={field.unit ?? ""}
-                onChange={(e) => onUpdate({ ...field, unit: e.target.value })}
-                placeholder="Ej: kg, cm, %"
-                className="h-9 w-32 rounded-lg border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
-              />
-            </div>
-          )}
+          {/* Unit + Required toggle */}
+          <div className="flex items-end gap-4">
+            {field.type === "number" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-400">Unidad</Label>
+                <Input
+                  value={field.unit ?? ""}
+                  onChange={(e) => onUpdate({ ...field, unit: e.target.value })}
+                  placeholder="kg, cm..."
+                  className="h-9 w-24 rounded-lg border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
+                />
+              </div>
+            )}
 
-          {/* Required toggle */}
-          <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-800/30 px-3 py-2">
-            <Label className="text-xs text-gray-400">Campo obligatorio</Label>
-            <Switch
-              checked={field.required}
-              onCheckedChange={(v) => onUpdate({ ...field, required: v })}
-            />
+            <div className="space-y-1.5">
+              <Label className="text-xs text-gray-400">Obligatorio</Label>
+              <div className="flex h-9 rounded-lg border border-gray-700 bg-gray-800/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => onUpdate({ ...field, required: false })}
+                  className={`rounded-md px-3 text-xs font-medium transition-colors ${
+                    !field.required
+                      ? "bg-gray-700 text-white"
+                      : "text-gray-500 hover:text-gray-400"
+                  }`}
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdate({ ...field, required: true })}
+                  className={`rounded-md px-3 text-xs font-medium transition-colors ${
+                    field.required
+                      ? "bg-red-500/80 text-white"
+                      : "text-gray-500 hover:text-gray-400"
+                  }`}
+                >
+                  Sí
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

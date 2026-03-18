@@ -6,24 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { ResponseViewer } from "../../../components/forms/ResponseViewer";
 import { createSupabaseBrowser } from "../../../lib/supabase/browser";
 import { getPresignedPhotoUrl } from "../../../lib/forms-upload";
-import type {
-  FormAssignment,
-  FormResponse,
-  FormTemplate,
-  CustomField,
-  MeasurementData,
-} from "../../../lib/types/forms";
-import {
-  MANDATORY_BASICS,
-  MANDATORY_MEASUREMENTS,
-  MANDATORY_PHOTOS,
-} from "../../../lib/types/forms";
-
-const MEASUREMENT_KEYS = [
-  ...MANDATORY_BASICS,
-  ...MANDATORY_MEASUREMENTS,
-] as const;
-const PHOTO_KEYS = [...MANDATORY_PHOTOS] as const;
+import type { FormAssignment, CustomField } from "../../../lib/types/forms";
 
 export default function AssignmentDetailPage({
   params,
@@ -33,7 +16,11 @@ export default function AssignmentDetailPage({
   const { assignmentId } = use(params);
   const router = useRouter();
   const [assignment, setAssignment] = useState<FormAssignment | null>(null);
-  const [response, setResponse] = useState<FormResponse | null>(null);
+  const [fields, setFields] = useState<CustomField[]>([]);
+  const [values, setValues] = useState<Record<string, string | number>>({});
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [submittedAt, setSubmittedAt] = useState<string>("");
+  const [clientName, setClientName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = createSupabaseBrowser();
@@ -72,112 +59,72 @@ export default function AssignmentDetailPage({
           return;
         }
 
-        const template: FormTemplate | null = rawAssignment.template ?? null;
+        // Get schema fields
+        const template = rawAssignment.template ?? null;
         const schemaSource =
           template?.customFields ??
           template?.schema ??
           rawAssignment.schemaSnapshot;
-        const customFields: CustomField[] = Array.isArray(schemaSource)
-          ? schemaSource
-              .filter((f: CustomField) => !f.required)
-              .map((f: CustomField, i: number) => ({
-                ...f,
-                id: f.id ?? `field_${f.order ?? i}`,
-              }))
+        const schemaFields: CustomField[] = Array.isArray(schemaSource)
+          ? schemaSource.map((f: CustomField, i: number) => ({
+              ...f,
+              id: f.id ?? `field_${f.order ?? i}`,
+            }))
           : [];
-        const member = rawAssignment.member;
-        const assignmentData: FormAssignment = {
-          ...rawAssignment,
-          template: template ? { ...template, customFields } : null,
-          clientId:
-            rawAssignment.clientId ??
-            rawAssignment.memberId ??
-            rawAssignment.id,
-          clientName:
-            rawAssignment.clientName ??
-            member?.fullName ??
-            member?.email ??
-            "Cliente",
-        };
-        setAssignment(assignmentData);
 
+        // Get member info
+        const member = rawAssignment.member;
+        const name =
+          rawAssignment.clientName ??
+          member?.fullName ??
+          member?.email ??
+          "Cliente";
+
+        setAssignment({
+          ...rawAssignment,
+          template: template ? { ...template, schema: schemaFields } : null,
+          clientName: name,
+        });
+        setFields(schemaFields);
+        setClientName(name);
+
+        // Get response
         const rawResponse =
           data.response ?? rawAssignment.responses?.[0] ?? data.responses?.[0];
-        if (!rawResponse?.answers || assignmentData.status !== "completed") {
-          setResponse(null);
+        if (!rawResponse?.answers || rawAssignment.status !== "completed") {
           return;
         }
 
         const answers = rawResponse.answers as Record<string, unknown>;
-        const measurements: Record<string, number> = {};
-        for (const key of MEASUREMENT_KEYS) {
-          const v = answers[key];
-          if (typeof v === "number" && !Number.isNaN(v)) {
-            measurements[key] = v;
-          }
-        }
+        setSubmittedAt(rawResponse.submittedAt ?? "");
 
-        const photoKeys: string[] = [];
-        for (const key of PHOTO_KEYS) {
-          const v = answers[key];
-          if (typeof v === "string" && v) photoKeys.push(key);
-        }
-        for (const [fieldId, v] of Object.entries(answers)) {
-          if (
-            typeof v === "string" &&
-            v &&
-            customFields.some((f) => f.id === fieldId && f.type === "photo")
-          ) {
-            photoKeys.push(fieldId);
-          }
-        }
+        // Separate values and photos
+        const photoFields = schemaFields.filter((f) => f.type === "photo");
+        const valueFields = schemaFields.filter((f) => f.type !== "photo");
 
-        const photoUrls: Record<string, string> = {};
-        for (const key of photoKeys) {
-          const s3Key = String(answers[key]);
-          try {
-            photoUrls[key] = await getPresignedPhotoUrl(s3Key, token);
-          } catch {
-            photoUrls[key] = "";
-          }
-        }
-
-        const customFieldValues: { fieldId: string; value: string | number }[] =
-          [];
-        for (const field of customFields) {
+        // Extract values
+        const extractedValues: Record<string, string | number> = {};
+        for (const field of valueFields) {
           const val = answers[field.id];
-          if (val === undefined || val === null) continue;
-          if (field.type === "photo") {
-            customFieldValues.push({
-              fieldId: field.id,
-              value: photoUrls[field.id] ?? String(val),
-            });
-          } else {
-            customFieldValues.push({
-              fieldId: field.id,
-              value: val as string | number,
-            });
+          if (val !== undefined && val !== null) {
+            extractedValues[field.id] = val as string | number;
           }
         }
+        if (!cancelled) setValues(extractedValues);
 
-        const formResponse: FormResponse = {
-          id: rawResponse.id,
-          assignmentId: rawAssignment.id,
-          assignment: {
-            ...assignmentData,
-            template: template ? { ...template, customFields } : null,
-          },
-          clientId: assignmentData.clientId,
-          clientName: assignmentData.clientName,
-          measurements: measurements as unknown as FormResponse["measurements"],
-          photos: {
-            front: photoUrls.front ?? "",
-            side: photoUrls.side ?? "",
-          },
-          customFieldValues,
-          submittedAt: rawResponse.submittedAt ?? new Date().toISOString(),
-        };
-        if (!cancelled) setResponse(formResponse);
+        // Get presigned URLs for photos
+        const urls: Record<string, string> = {};
+        for (const field of photoFields) {
+          const s3Key = answers[field.id];
+          if (typeof s3Key === "string" && s3Key) {
+            try {
+              urls[field.id] = await getPresignedPhotoUrl(s3Key, token);
+            } catch {
+              urls[field.id] = "";
+            }
+          }
+        }
+        if (!cancelled) setPhotoUrls(urls);
       } catch {
         if (!cancelled) setError("Error al cargar");
       } finally {
@@ -216,7 +163,7 @@ export default function AssignmentDetailPage({
     );
   }
 
-  if (assignment.status !== "completed" || !response) {
+  if (assignment.status !== "completed" || !submittedAt) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -232,7 +179,7 @@ export default function AssignmentDetailPage({
               {assignment.template?.name ?? "Formulario"}
             </h1>
             <p className="mt-0.5 text-sm text-gray-400">
-              {assignment.clientName} · Pendiente de completar
+              {clientName} · Pendiente de completar
             </p>
           </div>
         </div>
@@ -255,7 +202,7 @@ export default function AssignmentDetailPage({
         </button>
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Respuesta de {response.clientName}
+            Respuesta de {clientName}
           </h1>
           <p className="mt-0.5 text-sm text-gray-400">
             {assignment.template?.name ?? "Formulario"}
@@ -264,7 +211,13 @@ export default function AssignmentDetailPage({
       </div>
 
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
-        <ResponseViewer response={response} />
+        <ResponseViewer
+          clientName={clientName}
+          submittedAt={submittedAt}
+          fields={fields}
+          values={values}
+          photoUrls={photoUrls}
+        />
       </div>
     </div>
   );

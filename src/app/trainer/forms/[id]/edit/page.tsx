@@ -41,8 +41,8 @@ export default function EditTemplatePage({
         setTemplate(null);
         return;
       }
-      const schema = tpl.schema ?? [];
-      tpl.customFields = schema.filter((field) => !field.required);
+      // Ensure schema is present (TemplateEditor reads from existing.schema)
+      tpl.schema = tpl.schema ?? [];
       setTemplate(tpl);
     } finally {
       setLoading(false);

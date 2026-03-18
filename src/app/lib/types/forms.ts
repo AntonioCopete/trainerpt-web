@@ -68,6 +68,99 @@ export const PHOTO_LABELS: Record<PhotoType, string> = {
   side: "Foto lateral",
 };
 
+// --- Default fields for new templates ---
+
+export function getDefaultTemplateFields(): CustomField[] {
+  return [
+    {
+      id: "weight",
+      type: "number",
+      label: "Peso",
+      unit: "kg",
+      required: true,
+      order: 0,
+    },
+    {
+      id: "age",
+      type: "number",
+      label: "Edad",
+      unit: "años",
+      required: true,
+      order: 1,
+    },
+    {
+      id: "shoulders",
+      type: "number",
+      label: "Hombros",
+      unit: "cm",
+      required: true,
+      order: 2,
+    },
+    {
+      id: "chest",
+      type: "number",
+      label: "Pecho",
+      unit: "cm",
+      required: true,
+      order: 3,
+    },
+    {
+      id: "biceps",
+      type: "number",
+      label: "Bíceps",
+      unit: "cm",
+      required: true,
+      order: 4,
+    },
+    {
+      id: "waist",
+      type: "number",
+      label: "Cintura",
+      unit: "cm",
+      required: true,
+      order: 5,
+    },
+    {
+      id: "hips",
+      type: "number",
+      label: "Cadera",
+      unit: "cm",
+      required: true,
+      order: 6,
+    },
+    {
+      id: "quadriceps",
+      type: "number",
+      label: "Cuádriceps",
+      unit: "cm",
+      required: true,
+      order: 7,
+    },
+    {
+      id: "calves",
+      type: "number",
+      label: "Gemelos",
+      unit: "cm",
+      required: true,
+      order: 8,
+    },
+    {
+      id: "front",
+      type: "photo",
+      label: "Foto frontal",
+      required: true,
+      order: 9,
+    },
+    {
+      id: "side",
+      type: "photo",
+      label: "Foto lateral",
+      required: true,
+      order: 10,
+    },
+  ];
+}
+
 // --- Template ---
 
 export interface FormTemplate {

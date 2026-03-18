@@ -6,7 +6,7 @@ import {
   MoreVertical,
   Pencil,
   Copy,
-  Trash2,
+  Archive,
   Send,
 } from "lucide-react";
 import type { FormTemplate } from "../../lib/types/forms";
@@ -37,8 +37,9 @@ export function TemplateCard({
   onSend,
   onClick,
 }: TemplateCardProps) {
-  const customFields = template.schema.filter((field) => !field?.required);
-  const totalFields = template.schema.length; // 7 measurements + 2 photos + custom
+  const totalFields = template.schema?.length ?? 0;
+  const optionalFields =
+    template.schema?.filter((field) => !field?.required) ?? [];
   const date = new Date(template.updatedAt).toLocaleDateString("es-ES", {
     day: "numeric",
     month: "short",
@@ -115,10 +116,10 @@ export function TemplateCard({
                 e.stopPropagation();
                 onDelete(template.id);
               }}
-              className="gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-400"
+              className="gap-2 text-orange-400 focus:bg-orange-500/10 focus:text-orange-400"
             >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
+              <Archive className="h-4 w-4" />
+              Archivar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -132,11 +133,12 @@ export function TemplateCard({
       {/* Footer chips */}
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-300">
-          {totalFields} campos
+          {totalFields} campo{totalFields !== 1 ? "s" : ""}
         </span>
-        {customFields.length > 0 && (
+        {optionalFields.length > 0 && (
           <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-400">
-            {customFields.length} personalizados
+            {optionalFields.length} opcional
+            {optionalFields.length !== 1 ? "es" : ""}
           </span>
         )}
       </div>

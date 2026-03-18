@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   User,
   Eye,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import type {
 } from "../../../lib/types/forms";
 import { formatAssignmentSentDate } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
+import { toast } from "sonner";
 // import {
 //   getTemplate,
 //   getAssignmentsByTemplate,
@@ -40,8 +42,34 @@ export default function TemplateDetailPage({
   const [assignments, setAssignments] = useState<FormAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   const supabase = createSupabaseBrowser();
+
+  const handleArchive = async () => {
+    setArchiving(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        toast.success("Plantilla archivada");
+        router.push("/trainer/forms");
+      } else {
+        toast.error("Error al archivar la plantilla");
+      }
+    } catch {
+      toast.error("Error al archivar la plantilla");
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +144,15 @@ export default function TemplateDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleArchive}
+            disabled={archiving}
+            className="gap-2 border-orange-500/30 bg-transparent text-orange-400 hover:border-orange-500/50 hover:bg-orange-500/10 hover:text-orange-300"
+          >
+            <Archive className="h-4 w-4" />
+            {archiving ? "Archivando..." : "Archivar"}
+          </Button>
           <Button
             variant="outline"
             onClick={() => router.push(`/trainer/forms/${id}/edit`)}
@@ -250,7 +287,7 @@ export default function TemplateDetailPage({
           <FormPreview
             templateName={template.name}
             templateDescription={template.description}
-            customFields={template.schema.filter((field) => !field.required)}
+            customFields={template.schema ?? []}
           />
         </div>
       </div>

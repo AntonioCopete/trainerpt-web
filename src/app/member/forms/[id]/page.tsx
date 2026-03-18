@@ -3,23 +3,21 @@
 import { useState, useEffect, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Loader2, CheckCircle2, Camera } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  Loader2,
+  CheckCircle2,
+  Ruler,
+  Camera,
+  Type,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MeasurementFields } from "../../../components/forms/MeasurementField";
 import { PhotoUpload } from "../../../components/forms/PhotoUpload";
-import type {
-  FormAssignment,
-  MeasurementData,
-  MandatoryKey,
-  CustomField,
-} from "../../../lib/types/forms";
-import {
-  MANDATORY_BASICS,
-  MANDATORY_MEASUREMENTS,
-} from "../../../lib/types/forms";
+import type { FormAssignment, CustomField } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "../../../lib/supabase/browser";
 import { uploadPhotoWithPresignedUrl } from "../../../lib/forms-upload";
 
@@ -37,18 +35,9 @@ export default function FillFormPage({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const supabase = createSupabaseBrowser();
 
-  // Form state
-  const [measurements, setMeasurements] = useState<Partial<MeasurementData>>(
-    {},
-  );
-  const [photoFront, setPhotoFront] = useState<File | null>(null);
-  const [photoSide, setPhotoSide] = useState<File | null>(null);
-  const [customValues, setCustomValues] = useState<
-    Record<string, string | number>
-  >({});
-  const [customPhotos, setCustomPhotos] = useState<Record<string, File | null>>(
-    {},
-  );
+  // Form state: all values (text/number) and photos
+  const [values, setValues] = useState<Record<string, string | number>>({});
+  const [photos, setPhotos] = useState<Record<string, File | null>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -81,18 +70,21 @@ export default function FillFormPage({
           rawTemplate?.customFields ??
           rawTemplate?.schema ??
           raw.schemaSnapshot;
-        const customFields: CustomField[] = Array.isArray(schemaSource)
-          ? schemaSource
-              .filter((f: CustomField) => !f.required)
-              .map((f: CustomField, i: number) => ({
-                ...f,
-                id: f.id ?? `field_${f.order ?? i}`,
-                order: f.order ?? i,
-              }))
+        const fields: CustomField[] = Array.isArray(schemaSource)
+          ? schemaSource.map((f: CustomField, i: number) => ({
+              ...f,
+              id: f.id ?? `field_${f.order ?? i}`,
+              order: f.order ?? i,
+            }))
           : [];
         const template = rawTemplate
-          ? { ...rawTemplate, customFields }
-          : { name: "Formulario", description: "", customFields };
+          ? { ...rawTemplate, customFields: fields, schema: fields }
+          : {
+              name: "Formulario",
+              description: "",
+              customFields: fields,
+              schema: fields,
+            };
         setAssignment({ ...raw, template });
       } catch {
         if (!cancelled) setAssignment(null);
@@ -105,48 +97,40 @@ export default function FillFormPage({
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, supabase]);
 
-  const updateMeasurement = useCallback((key: MandatoryKey, value: number) => {
-    setMeasurements((prev) => ({ ...prev, [key]: value }));
+  const updateValue = useCallback((fieldId: string, value: string | number) => {
+    setValues((prev) => ({ ...prev, [fieldId]: value }));
   }, []);
 
-  const updateCustomValue = useCallback(
-    (fieldId: string, value: string | number) => {
-      setCustomValues((prev) => ({ ...prev, [fieldId]: value }));
-    },
-    [],
-  );
+  const updatePhoto = useCallback((fieldId: string, file: File | null) => {
+    setPhotos((prev) => ({ ...prev, [fieldId]: file }));
+  }, []);
 
-  // Validation
-  const isMeasurementsValid = [
-    ...MANDATORY_BASICS,
-    ...MANDATORY_MEASUREMENTS,
-  ].every(
-    (key) =>
-      measurements[key] !== undefined &&
-      measurements[key] !== 0 &&
-      !Number.isNaN(measurements[key]),
-  );
-  const isPhotosValid = photoFront !== null && photoSide !== null;
-  const customFieldsList = assignment?.template?.customFields ?? [];
-  const isCustomValid =
-    customFieldsList
-      .filter((f) => f.required)
-      .every((f) => {
-        if (f.type === "photo") return customPhotos[f.id] != null;
-        const val = customValues[f.id];
-        if (val === undefined || val === "") return false;
-        if (f.type === "number") {
-          const s = String(val);
-          if (s.endsWith(".") || s.endsWith(",")) return false;
-          const n = Number.parseFloat(s.replace(",", "."));
-          return !Number.isNaN(n);
-        }
-        return true;
-      }) ?? true;
+  // Get fields from schema
+  const fields =
+    assignment?.template?.schema ?? assignment?.template?.customFields ?? [];
+  const numberFields = fields.filter((f) => f.type === "number");
+  const photoFields = fields.filter((f) => f.type === "photo");
+  const textFields = fields.filter((f) => f.type === "text");
 
-  const isFormValid = isMeasurementsValid && isPhotosValid && isCustomValid;
+  // Validation: all required fields must be filled
+  const isFormValid = fields
+    .filter((f) => f.required)
+    .every((f) => {
+      if (f.type === "photo") {
+        return photos[f.id] != null;
+      }
+      const val = values[f.id];
+      if (val === undefined || val === "") return false;
+      if (f.type === "number") {
+        const s = String(val);
+        if (s.endsWith(".") || s.endsWith(",")) return false;
+        const n = Number.parseFloat(s.replace(",", "."));
+        return !Number.isNaN(n);
+      }
+      return true;
+    });
 
   const handleSubmit = async () => {
     if (!assignment || !isFormValid) return;
@@ -160,77 +144,44 @@ export default function FillFormPage({
 
       const assignmentId = assignment.id;
 
-      // 1) Subir fotos a S3 con presigned URLs y obtener keys
-      let photoFrontKey: string | null = null;
-      let photoSideKey: string | null = null;
-      const customPhotoKeys: Record<string, string> = {};
-
-      if (photoFront) {
-        photoFrontKey = await uploadPhotoWithPresignedUrl({
-          assignmentId,
-          file: photoFront,
-          filename: "front",
-          token,
-        });
-        if (!photoFrontKey?.trim()) {
-          throw new Error(
-            "La foto frontal no se subió correctamente. Inténtalo de nuevo.",
-          );
-        }
-      }
-      if (photoSide) {
-        photoSideKey = await uploadPhotoWithPresignedUrl({
-          assignmentId,
-          file: photoSide,
-          filename: "side",
-          token,
-        });
-        if (!photoSideKey?.trim()) {
-          throw new Error(
-            "La foto lateral no se subió correctamente. Inténtalo de nuevo.",
-          );
-        }
-      }
-      for (const [fieldId, file] of Object.entries(customPhotos)) {
+      // Upload photos and get S3 keys
+      const photoKeys: Record<string, string> = {};
+      for (const [fieldId, file] of Object.entries(photos)) {
         if (file) {
           const key = await uploadPhotoWithPresignedUrl({
             assignmentId,
             file,
-            filename: `custom_${fieldId}`,
+            filename: fieldId,
             token,
           });
           if (!key?.trim()) {
+            const field = fields.find((f) => f.id === fieldId);
             throw new Error(
-              `La foto del campo no se subió correctamente. Inténtalo de nuevo.`,
+              `La foto "${field?.label ?? fieldId}" no se subió correctamente. Inténtalo de nuevo.`,
             );
           }
-          customPhotoKeys[fieldId] = key;
+          photoKeys[fieldId] = key;
         }
       }
 
-      const customFieldsList = assignment.template?.customFields ?? [];
+      // Build answers object
+      const answers: Record<string, unknown> = {};
 
-      // 2) answers = { fieldId: value } según FormResponse.answers (Json)
-      const answers: Record<string, unknown> = {
-        ...measurements,
-        ...(photoFrontKey && { front: photoFrontKey }),
-        ...(photoSideKey && { side: photoSideKey }),
-      };
-
-      for (const field of customFieldsList) {
+      for (const field of fields) {
         if (field.type === "photo") {
-          const key = customPhotoKeys[field.id];
+          const key = photoKeys[field.id];
           if (key) answers[field.id] = key;
-        } else {
-          const val = customValues[field.id];
+        } else if (field.type === "number") {
+          const val = values[field.id];
           if (val === undefined || val === "") continue;
-          if (field.type === "number") {
-            const n =
-              typeof val === "number"
-                ? val
-                : Number.parseFloat(String(val).replace(",", "."));
-            answers[field.id] = Number.isNaN(n) ? val : n;
-          } else {
+          const n =
+            typeof val === "number"
+              ? val
+              : Number.parseFloat(String(val).replace(",", "."));
+          answers[field.id] = Number.isNaN(n) ? val : n;
+        } else {
+          const val = values[field.id];
+          if (val !== undefined && val !== "") {
             answers[field.id] = val;
           }
         }
@@ -286,7 +237,6 @@ export default function FillFormPage({
     );
   }
 
-  // Success screen
   if (submitted) {
     return (
       <motion.div
@@ -306,7 +256,7 @@ export default function FillFormPage({
           Formulario enviado
         </h2>
         <p className="mt-2 text-gray-400 text-center max-w-sm">
-          Tus medidas y fotos se han enviado correctamente a tu entrenador.
+          Tu información se ha enviado correctamente a tu entrenador.
         </p>
         <Button
           onClick={() => router.push("/member/forms")}
@@ -332,8 +282,10 @@ export default function FillFormPage({
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">{template.name}</h1>
-          {template.description && (
+          <h1 className="text-2xl font-bold text-white">
+            {template?.name ?? "Formulario"}
+          </h1>
+          {template?.description && (
             <p className="mt-1 text-sm text-gray-400">{template.description}</p>
           )}
         </div>
@@ -341,62 +293,21 @@ export default function FillFormPage({
 
       {/* Form sections */}
       <div className="space-y-6 max-w-2xl">
-        {/* Measurements */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5"
-        >
-          <MeasurementFields
-            values={measurements}
-            onChange={updateMeasurement}
-          />
-        </motion.div>
-
-        {/* Photos */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4"
-        >
-          <div className="flex items-center gap-2">
-            <Camera className="h-4 w-4 text-red-400" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-              Fotos de progreso
-            </h3>
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
-              Obligatorio
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <PhotoUpload
-              photoType="front"
-              value={photoFront}
-              onChange={setPhotoFront}
-            />
-            <PhotoUpload
-              photoType="side"
-              value={photoSide}
-              onChange={setPhotoSide}
-            />
-          </div>
-        </motion.div>
-
-        {/* Custom fields */}
-        {(template.customFields ?? []).length > 0 && (
+        {/* Number fields (measurements) */}
+        {numberFields.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
             className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4"
           >
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
-              Informacion adicional
-            </h3>
-
-            <div className="space-y-4">
-              {(template.customFields ?? [])
+            <div className="flex items-center gap-2">
+              <Ruler className="h-4 w-4 text-red-400" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+                Medidas
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {numberFields
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((field) => (
                   <div key={field.id} className="space-y-1.5">
@@ -406,68 +317,113 @@ export default function FillFormPage({
                         <span className="ml-1 text-red-500">*</span>
                       )}
                     </Label>
-
-                    {field.type === "text" && (
-                      <Textarea
-                        value={(customValues[field.id] as string) ?? ""}
-                        onChange={(e) =>
-                          updateCustomValue(field.id, e.target.value)
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="—"
+                        value={
+                          values[field.id] !== undefined &&
+                          values[field.id] !== ""
+                            ? String(values[field.id])
+                            : ""
                         }
-                        placeholder={`Introduce ${field.label.toLowerCase()}...`}
-                        rows={3}
-                        className="rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 resize-none"
-                      />
-                    )}
-
-                    {field.type === "number" && (
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="—"
-                          value={
-                            customValues[field.id] !== undefined &&
-                            customValues[field.id] !== ""
-                              ? String(customValues[field.id])
-                              : ""
+                        onChange={(e) => {
+                          const raw = e.target.value.trim();
+                          if (!/^\d*[.,]?\d*$/.test(raw)) return;
+                          if (raw === "") {
+                            updateValue(field.id, "");
+                            return;
                           }
-                          onChange={(e) => {
-                            const raw = e.target.value.trim();
-                            if (!/^\d*[.,]?\d*$/.test(raw)) return;
-                            if (raw === "") {
-                              updateCustomValue(field.id, "");
-                              return;
-                            }
-                            if (raw.endsWith(".") || raw.endsWith(",")) {
-                              updateCustomValue(field.id, raw);
-                              return;
-                            }
-                            const n = Number.parseFloat(raw.replace(",", "."));
-                            if (!Number.isNaN(n))
-                              updateCustomValue(field.id, n);
-                          }}
-                          className="h-10 rounded-xl border-gray-700 bg-gray-800 pr-12 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        {field.unit && (
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                            {field.unit}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {field.type === "photo" && (
-                      <PhotoUpload
-                        photoType="front"
-                        value={customPhotos[field.id] ?? null}
-                        onChange={(file) =>
-                          setCustomPhotos((prev) => ({
-                            ...prev,
-                            [field.id]: file,
-                          }))
-                        }
+                          if (raw.endsWith(".") || raw.endsWith(",")) {
+                            updateValue(field.id, raw);
+                            return;
+                          }
+                          const n = Number.parseFloat(raw.replace(",", "."));
+                          if (!Number.isNaN(n)) updateValue(field.id, n);
+                        }}
+                        className="h-10 rounded-xl border-gray-700 bg-gray-800 pr-12 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                    )}
+                      {field.unit && (
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                          {field.unit}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Photo fields */}
+        {photoFields.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4"
+          >
+            <div className="flex items-center gap-2">
+              <Camera className="h-4 w-4 text-red-400" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+                Fotos
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {photoFields
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((field) => (
+                  <div key={field.id} className="space-y-1.5">
+                    <Label className="text-xs text-gray-400">
+                      {field.label}
+                      {field.required && (
+                        <span className="ml-1 text-red-500">*</span>
+                      )}
+                    </Label>
+                    <PhotoUpload
+                      photoType="front"
+                      value={photos[field.id] ?? null}
+                      onChange={(file) => updatePhoto(field.id, file)}
+                    />
+                  </div>
+                ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Text fields */}
+        {textFields.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4"
+          >
+            <div className="flex items-center gap-2">
+              <Type className="h-4 w-4 text-red-400" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+                Información adicional
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {textFields
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((field) => (
+                  <div key={field.id} className="space-y-1.5">
+                    <Label className="text-xs text-gray-400">
+                      {field.label}
+                      {field.required && (
+                        <span className="ml-1 text-red-500">*</span>
+                      )}
+                    </Label>
+                    <Textarea
+                      value={(values[field.id] as string) ?? ""}
+                      onChange={(e) => updateValue(field.id, e.target.value)}
+                      placeholder={`Introduce ${field.label.toLowerCase()}...`}
+                      rows={3}
+                      className="rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 resize-none"
+                    />
                   </div>
                 ))}
             </div>

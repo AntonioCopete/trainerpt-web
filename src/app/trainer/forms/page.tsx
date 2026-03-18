@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ClipboardList, Search, UserPlus } from "lucide-react";
+import {
+  Plus,
+  ClipboardList,
+  Search,
+  UserPlus,
+  Archive,
+  ChevronDown,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TemplateCard } from "../../components/forms/TemplateCard";
@@ -23,6 +31,11 @@ export default function TrainerFormsPage() {
     null,
   );
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [archivedTemplates, setArchivedTemplates] = useState<FormTemplate[]>(
+    [],
+  );
+  const [showArchived, setShowArchived] = useState(false);
+  const [loadingArchived, setLoadingArchived] = useState(false);
   const supabase = createSupabaseBrowser();
 
   const fetchTemplates = useCallback(async () => {
@@ -57,9 +70,88 @@ export default function TrainerFormsPage() {
       t.description.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const fetchArchivedTemplates = useCallback(async () => {
+    setLoadingArchived(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/archived`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+      const data = await res.json();
+      setArchivedTemplates(data.templates ?? []);
+    } catch {
+      toast.error("Error al cargar plantillas archivadas");
+    } finally {
+      setLoadingArchived(false);
+    }
+  }, [supabase]);
+
+  const handleToggleArchived = () => {
+    const newState = !showArchived;
+    setShowArchived(newState);
+    if (newState && archivedTemplates.length === 0) {
+      fetchArchivedTemplates();
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}/restore`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const restored = archivedTemplates.find((t) => t.id === id);
+        if (restored) {
+          setTemplates((prev) => [...prev, { ...restored, isArchived: false }]);
+          setArchivedTemplates((prev) => prev.filter((t) => t.id !== id));
+        }
+        toast.success("Plantilla restaurada");
+      } else {
+        toast.error("Error al restaurar la plantilla");
+      }
+    } catch {
+      toast.error("Error al restaurar la plantilla");
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    // await deleteTemplate(id);
-    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const archived = templates.find((t) => t.id === id);
+        setTemplates((prev) => prev.filter((t) => t.id !== id));
+        if (archived) {
+          setArchivedTemplates((prev) => [
+            { ...archived, isArchived: true },
+            ...prev,
+          ]);
+        }
+        toast.success("Plantilla archivada");
+      } else {
+        toast.error("Error al archivar la plantilla");
+      }
+    } catch {
+      toast.error("Error al archivar la plantilla");
+    }
   };
 
   const handleSend = (template: FormTemplate) => {
@@ -185,6 +277,83 @@ export default function TrainerFormsPage() {
                 onClick={(id) => router.push(`/trainer/forms/${id}`)}
               />
             ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Archived templates section */}
+      {!loading && (
+        <div className="mt-8 border-t border-gray-800 pt-6">
+          <button
+            type="button"
+            onClick={handleToggleArchived}
+            className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-gray-400 hover:bg-gray-900/60 hover:text-gray-300 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Archive className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                Plantillas archivadas
+                {archivedTemplates.length > 0 && (
+                  <span className="ml-2 text-gray-500">
+                    ({archivedTemplates.length})
+                  </span>
+                )}
+              </span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${showArchived ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {showArchived && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  {loadingArchived ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-700 border-t-orange-500" />
+                    </div>
+                  ) : archivedTemplates.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-gray-500">
+                      No hay plantillas archivadas
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {archivedTemplates.map((template) => (
+                        <div
+                          key={template.id}
+                          className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/40 px-4 py-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-300">
+                              {template.name}
+                            </p>
+                            <p className="truncate text-xs text-gray-500">
+                              {template.description}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRestore(template.id)}
+                            className="ml-3 gap-1.5 text-xs text-orange-400 hover:bg-orange-500/10 hover:text-orange-300"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Restaurar
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       )}

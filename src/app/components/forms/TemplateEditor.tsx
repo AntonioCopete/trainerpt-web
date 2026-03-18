@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldBuilder } from "./FieldBuilder";
 import { FormPreview } from "./FormPreview";
-import { MeasurementFields } from "./MeasurementField";
 import type { CustomField, FormTemplate } from "../../lib/types/forms";
-import { PHOTO_LABELS, nextPlaceholderFieldId } from "../../lib/types/forms";
+import {
+  getDefaultTemplateFields,
+  nextPlaceholderFieldId,
+} from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 import { toast } from "sonner";
 
@@ -26,7 +28,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [customFields, setCustomFields] = useState<CustomField[]>(
-    (existing?.schema ?? []).filter((field) => !field.required),
+    existing?.schema ?? getDefaultTemplateFields(),
   );
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,7 +67,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
       const payload = {
         name: name.trim(),
         description: description.trim(),
-        customFields: customFields.map((f) => ({
+        schema: customFields.map((f) => ({
           id: f.id,
           type: f.type,
           label: f.label,
@@ -192,66 +194,21 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
             </div>
           </div>
 
-          {/* Mandatory fields (read-only section) */}
+          {/* Fields */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white">
-                Campos obligatorios
-              </h2>
-              <span className="rounded-full bg-gray-800 px-2.5 py-1 text-[10px] font-medium text-gray-400">
-                Incluidos siempre
-              </span>
-            </div>
-
-            <MeasurementFields values={null} readOnly />
-
-            {/* Mandatory photos indicator */}
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(PHOTO_LABELS).map(([key, label]) => (
-                <div
-                  key={key}
-                  className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-3 py-2.5"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
-                    <svg
-                      className="h-4 w-4 text-red-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-white">{label}</p>
-                    <p className="text-[10px] text-gray-500">Obligatorio</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom fields */}
-          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">
-                Campos personalizados
+                Campos del formulario
               </h2>
               <span className="text-xs text-gray-500">
                 {customFields.length} campo
                 {customFields.length !== 1 ? "s" : ""}
               </span>
             </div>
+
+            <p className="text-xs text-gray-500">
+              Arrastra para reordenar. Elimina los campos que no necesites.
+            </p>
 
             {customFields.length > 0 ? (
               <Reorder.Group
@@ -274,8 +231,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
               </Reorder.Group>
             ) : (
               <p className="py-4 text-center text-sm text-gray-600">
-                No hay campos personalizados. Agrega campos adicionales para
-                recopilar mas informacion.
+                No hay campos. Agrega al menos un campo para tu formulario.
               </p>
             )}
 
