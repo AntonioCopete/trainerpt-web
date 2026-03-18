@@ -11,6 +11,7 @@ import {
   Archive,
   ChevronDown,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,7 +126,7 @@ export default function TrainerFormsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handlePermanentDelete = async (id: string) => {
     try {
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token;
@@ -133,6 +134,28 @@ export default function TrainerFormsPage() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
         {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        setArchivedTemplates((prev) => prev.filter((t) => t.id !== id));
+        toast.success("Plantilla eliminada permanentemente");
+      } else {
+        toast.error("Error al eliminar la plantilla");
+      }
+    } catch {
+      toast.error("Error al eliminar la plantilla");
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}/archive`,
+        {
+          method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
         },
       );
@@ -167,6 +190,7 @@ export default function TrainerFormsPage() {
       {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
+        method: "POST",
       },
     );
 
@@ -272,7 +296,7 @@ export default function TrainerFormsPage() {
                 onDuplicate={(id) => {
                   duplicateTemplate(id);
                 }}
-                onDelete={handleDelete}
+                onDelete={handleArchive}
                 onSend={handleSend}
                 onClick={(id) => router.push(`/trainer/forms/${id}`)}
               />
@@ -338,15 +362,26 @@ export default function TrainerFormsPage() {
                               {template.description}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRestore(template.id)}
-                            className="ml-3 gap-1.5 text-xs text-orange-400 hover:bg-orange-500/10 hover:text-orange-300"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Restaurar
-                          </Button>
+                          <div className="ml-3 flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRestore(template.id)}
+                              className="gap-1.5 text-xs text-orange-400 hover:bg-orange-500/10 hover:text-orange-300"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Restaurar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePermanentDelete(template.id)}
+                              className="gap-1.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Eliminar
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
