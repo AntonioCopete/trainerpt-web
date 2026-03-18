@@ -3,7 +3,16 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { ArrowLeft, Plus, Save, Eye, EyeOff, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Save,
+  Eye,
+  EyeOff,
+  Loader2,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +67,14 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
 
   const handleReorder = useCallback((reordered: CustomField[]) => {
     setCustomFields(reordered.map((f, i) => ({ ...f, order: i })));
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    setCustomFields([]);
+  }, []);
+
+  const handleRestoreDefaults = useCallback(() => {
+    setCustomFields(getDefaultTemplateFields());
   }, []);
 
   const handleSave = async () => {
@@ -200,10 +217,38 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
               <h2 className="text-sm font-semibold text-white">
                 Campos del formulario
               </h2>
-              <span className="text-xs text-gray-500">
-                {customFields.length} campo
-                {customFields.length !== 1 ? "s" : ""}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  {customFields.length} campo
+                  {customFields.length !== 1 ? "s" : ""}
+                </span>
+                {!existing && (
+                  <>
+                    {customFields.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAll}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-800 hover:text-red-400 transition-colors"
+                        title="Limpiar todos los campos"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Limpiar
+                      </button>
+                    )}
+                    {customFields.length === 0 && (
+                      <button
+                        type="button"
+                        onClick={handleRestoreDefaults}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-800 hover:text-orange-400 transition-colors"
+                        title="Restaurar campos predeterminados"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Predeterminados
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             <p className="text-xs text-gray-500">
