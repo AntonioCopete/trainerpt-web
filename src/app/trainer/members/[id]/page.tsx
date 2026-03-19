@@ -11,13 +11,27 @@ import {
   Clock,
   CheckCircle2,
   Eye,
+  X,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type { MemberSummary, FormAssignment } from "@/src/app/lib/types/forms";
-import { formatAssignmentSentDate } from "@/src/app/lib/types/forms";
+import {
+  formatAssignmentSentDate,
+  getAssignmentWindowStatus,
+} from "@/src/app/lib/types/forms";
 import { SendFormDialog } from "@/src/app/components/forms/SendFormDialog";
 import type { FormTemplate } from "@/src/app/lib/types/forms";
+import { toast } from "sonner";
 
 export default function TrainerClientDetailPage({
   params,
@@ -34,11 +48,98 @@ export default function TrainerClientDetailPage({
   const [templateToSend, setTemplateToSend] = useState<FormTemplate | null>(
     null,
   );
+  const [cancellingAssignmentId, setCancellingAssignmentId] = useState<
+    string | null
+  >(null);
+  const [unlinkingMember, setUnlinkingMember] = useState(false);
+  const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
   const supabase = createSupabaseBrowser();
 
   const openSendDialog = (template: FormTemplate) => {
     setTemplateToSend(template);
     setSendDialogOpen(true);
+  };
+
+  const refreshAssignments = async () => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    if (!token) return;
+
+    const assignmentsRes = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments?memberId=${id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    );
+
+    if (assignmentsRes.ok) {
+      const data = await assignmentsRes.json();
+      const list: FormAssignment[] = data.assignments ?? data ?? [];
+      setAssignments(list);
+    } else {
+      setAssignments([]);
+    }
+  };
+
+  const handleCancelRecurringAssignment = async (assignmentId: string) => {
+    setCancellingAssignmentId(assignmentId);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      if (!token) throw new Error("Sesión expirada");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments/${assignmentId}/cancel`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (res.ok) {
+        toast.success("Recurrencia cancelada");
+        await refreshAssignments();
+      } else {
+        toast.error("Error al cancelar la recurrencia");
+      }
+    } catch {
+      toast.error("Error al cancelar la recurrencia");
+    } finally {
+      setCancellingAssignmentId(null);
+    }
+  };
+
+  const handleUnlinkMember = () => {
+    setUnlinkConfirmOpen(true);
+  };
+
+  const handleConfirmUnlinkMember = async () => {
+    setUnlinkingMember(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      if (!token) throw new Error("Sesión expirada");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/members/${id}/unlink`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (res.ok) {
+        toast.success("Member desvinculado correctamente");
+        router.push("/trainer/members");
+      } else {
+        toast.error("Error al desvincular el member");
+      }
+    } catch {
+      toast.error("Error al desvincular el member");
+    } finally {
+      setUnlinkingMember(false);
+    }
   };
 
   useEffect(() => {
@@ -151,9 +252,55 @@ export default function TrainerClientDetailPage({
                 {member.email}
               </p>
             </div>
+            <div className="flex items-start">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={unlinkingMember}
+                onClick={handleUnlinkMember}
+                className="gap-1 border-red-500/30 bg-transparent text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <X className="h-4 w-4" />
+                {unlinkingMember ? "Desvinculando..." : "Desvincular"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      <Dialog open={unlinkConfirmOpen} onOpenChange={setUnlinkConfirmOpen}>
+        <DialogContent className="border-gray-800 bg-gray-900 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Desvincular cliente
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Esto archivará los formularios pendientes recurrentes de esta
+              relación.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setUnlinkConfirmOpen(false)}
+              className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+              disabled={unlinkingMember}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                setUnlinkConfirmOpen(false);
+                await handleConfirmUnlinkMember();
+              }}
+              disabled={unlinkingMember}
+              className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+            >
+              {unlinkingMember ? "Desvinculando..." : "Desvincular"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white mb-4">
@@ -213,6 +360,7 @@ export default function TrainerClientDetailPage({
               )
               .map((assignment) => {
                 const sentDate = formatAssignmentSentDate(assignment);
+                const windowStatus = getAssignmentWindowStatus(assignment);
 
                 return (
                   <div
@@ -232,6 +380,12 @@ export default function TrainerClientDetailPage({
                           </span>
                         )}
                       </p>
+                      {windowStatus.dueAtFormatted && (
+                        <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Límite: {windowStatus.dueAtFormatted}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {assignment.status === "completed" ? (
@@ -255,10 +409,45 @@ export default function TrainerClientDetailPage({
                           </Button>
                         </>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
-                          <Clock className="h-3 w-3" />
-                          Pendiente
-                        </span>
+                        <>
+                          {assignment.status === "archived" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-[11px] font-medium text-gray-300">
+                              <Clock className="h-3 w-3" />
+                              Cancelado
+                            </span>
+                          ) : assignment.status === "missed" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
+                              <Clock className="h-3 w-3" />
+                              Vencido
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
+                              <Clock className="h-3 w-3" />
+                              Pendiente
+                            </span>
+                          )}
+
+                          {assignment.status === "pending" &&
+                            assignment.repeat &&
+                            assignment.repeat !== "none" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={
+                                  cancellingAssignmentId === assignment.id
+                                }
+                                onClick={() =>
+                                  handleCancelRecurringAssignment(assignment.id)
+                                }
+                                className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                {cancellingAssignmentId === assignment.id
+                                  ? "Cancelando..."
+                                  : "Cancelar"}
+                              </Button>
+                            )}
+                        </>
                       )}
                     </div>
                   </div>

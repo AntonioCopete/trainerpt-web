@@ -12,6 +12,7 @@ import {
   User,
   Eye,
   Archive,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,10 @@ import type {
   FormAssignment,
   MemberSummary,
 } from "../../../lib/types/forms";
-import { formatAssignmentSentDate } from "../../../lib/types/forms";
+import {
+  formatAssignmentSentDate,
+  getAssignmentWindowStatus,
+} from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import { toast } from "sonner";
 // import {
@@ -52,9 +56,9 @@ export default function TemplateDetailPage({
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token;
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${id}/archive`,
         {
-          method: "DELETE",
+          method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
         },
       );
@@ -216,6 +220,7 @@ export default function TemplateDetailPage({
                 {assignments.map(
                   (assignment: FormAssignment & { member: MemberSummary }) => {
                     const date = formatAssignmentSentDate(assignment);
+                    const windowStatus = getAssignmentWindowStatus(assignment);
 
                     return (
                       <motion.div
@@ -236,6 +241,12 @@ export default function TemplateDetailPage({
                             <p className="text-xs text-gray-500">
                               Enviado el {date}
                             </p>
+                            {windowStatus.dueAtFormatted && (
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                <Calendar className="h-3 w-3" />
+                                Límite: {windowStatus.dueAtFormatted}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -263,6 +274,22 @@ export default function TemplateDetailPage({
                                 Ver respuesta
                               </Button>
                             </>
+                          ) : assignment.status === "archived" ? (
+                            <Badge
+                              variant="secondary"
+                              className="border-0 bg-gray-500/10 text-gray-300 text-xs"
+                            >
+                              <Clock className="mr-1 h-3 w-3" />
+                              Cancelado
+                            </Badge>
+                          ) : assignment.status === "missed" ? (
+                            <Badge
+                              variant="secondary"
+                              className="border-0 bg-red-500/10 text-red-400 text-xs"
+                            >
+                              <Clock className="mr-1 h-3 w-3" />
+                              Vencido
+                            </Badge>
                           ) : (
                             <Badge
                               variant="secondary"

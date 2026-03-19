@@ -164,6 +164,13 @@ export default function AssignmentDetailPage({
   }
 
   if (assignment.status !== "completed" || !submittedAt) {
+    const statusText =
+      assignment.status === "archived"
+        ? "Cancelado"
+        : assignment.status === "missed"
+          ? "Tiempo agotado"
+          : "Pendiente de completar";
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -179,12 +186,16 @@ export default function AssignmentDetailPage({
               {assignment.template?.name ?? "Formulario"}
             </h1>
             <p className="mt-0.5 text-sm text-gray-400">
-              {clientName} · Pendiente de completar
+              {clientName} · {statusText}
             </p>
           </div>
         </div>
         <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6 text-center text-gray-500">
-          Este formulario aún no ha sido completado por el miembro.
+          {assignment.status === "archived"
+            ? "Este formulario fue cancelado por el entrenador."
+            : assignment.status === "missed"
+              ? "Este formulario ya no puede completarse."
+              : "Este formulario aún no ha sido completado por el miembro."}
         </div>
       </div>
     );
