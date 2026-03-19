@@ -126,22 +126,24 @@ export default function ClientFormsPage() {
                   {windowStatus.statusText}
                 </span>
               )}
-              {windowStatus.hasWindow && windowStatus.dueAtFormatted && (
-                <span
-                  className={`flex items-center gap-1 ${
-                    isMissed
-                      ? "text-red-400"
-                      : windowStatus.isOverdue
+              {windowStatus.hasWindow &&
+                windowStatus.dueAtFormatted &&
+                !isPending && (
+                  <span
+                    className={`flex items-center gap-1 ${
+                      isMissed
                         ? "text-red-400"
-                        : windowStatus.isBeforeWindow
-                          ? "text-gray-500"
-                          : "text-orange-400"
-                  }`}
-                >
-                  <Calendar className="h-3 w-3" />
-                  Límite: {windowStatus.dueAtFormatted}
-                </span>
-              )}
+                        : windowStatus.isOverdue
+                          ? "text-red-400"
+                          : windowStatus.isBeforeWindow
+                            ? "text-gray-500"
+                            : "text-orange-400"
+                    }`}
+                  >
+                    <Calendar className="h-3 w-3" />
+                    Límite: {windowStatus.dueAtFormatted}
+                  </span>
+                )}
               {assignment.repeat && assignment.repeat !== "none" && (
                 <span className="flex items-center gap-1 text-blue-400">
                   <Repeat className="h-3 w-3" />
