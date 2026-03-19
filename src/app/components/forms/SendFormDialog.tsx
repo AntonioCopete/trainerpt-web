@@ -95,6 +95,17 @@ export function SendFormDialog({
         payload.repeat = repeat;
       }
       if (dueAt) {
+        // Cliente: impedir seleccionar fechas pasadas.
+        // Backend interpreta `YYYY-MM-DD` como fin de día en UTC.
+        const [yyyy, mm, dd] = dueAt.split("-").map((v) => Number(v));
+        const dueAtUtcEnd = new Date(
+          Date.UTC(yyyy, mm - 1, dd, 23, 59, 59, 999),
+        );
+        if (dueAtUtcEnd.getTime() < Date.now()) {
+          toast.error("La fecha límite no puede ser anterior a hoy");
+          return;
+        }
+
         payload.dueAt = dueAt;
       }
 
@@ -224,6 +235,7 @@ export function SendFormDialog({
               type="date"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
+              min={new Date().toISOString().slice(0, 10)}
               className="h-10 rounded-xl border-gray-700 bg-gray-800 text-white focus:border-red-500 focus:ring-red-500/20"
             />
             <p className="text-xs text-gray-500">
