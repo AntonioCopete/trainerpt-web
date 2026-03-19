@@ -10,11 +10,19 @@ import {
   ArrowRight,
   User,
   Eye,
+  AlertCircle,
+  Calendar,
+  Repeat,
+  Lock,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import type { FormAssignment } from "../../lib/types/forms";
-import { formatAssignmentSentDate } from "../../lib/types/forms";
+import {
+  formatAssignmentSentDate,
+  getAssignmentWindowStatus,
+  REPEAT_LABELS,
+} from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 
 export default function ClientFormsPage() {
@@ -37,7 +45,12 @@ export default function ClientFormsPage() {
       );
       const data = await res.json();
       const list: FormAssignment[] = data.assignments ?? data ?? [];
-      setPending(list.filter((a: FormAssignment) => a.status === "pending"));
+      setPending(
+        list.filter(
+          (a: FormAssignment) =>
+            a.status === "pending" || a.status === "missed",
+        ),
+      );
       setCompleted(
         list.filter((a: FormAssignment) => a.status === "completed"),
       );
@@ -59,44 +72,98 @@ export default function ClientFormsPage() {
     isPending: boolean,
   ) => {
     const date = formatAssignmentSentDate(assignment);
+    const windowStatus = getAssignmentWindowStatus(assignment);
+    const isMissed = assignment.status === "missed";
 
     const content = (
       <>
         <div className="flex items-center gap-4 min-w-0">
           <div
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-              isPending
-                ? "bg-gradient-to-br from-red-500/20 to-orange-500/20"
-                : "bg-gray-800/60"
+              isMissed
+                ? "bg-red-500/20"
+                : isPending
+                  ? windowStatus.isInWindow
+                    ? "bg-gradient-to-br from-red-500/20 to-orange-500/20"
+                    : "bg-gray-800/60"
+                  : "bg-gray-800/60"
             }`}
           >
-            <ClipboardList
-              className={`h-5 w-5 ${
-                isPending ? "text-red-400" : "text-gray-500"
-              }`}
-            />
+            {windowStatus.isBeforeWindow ? (
+              <Lock className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ClipboardList
+                className={`h-5 w-5 ${
+                  isMissed
+                    ? "text-red-400"
+                    : isPending
+                      ? "text-red-400"
+                      : "text-gray-500"
+                }`}
+              />
+            )}
           </div>
           <div className="min-w-0">
             <h3 className="truncate font-semibold text-white">
               {assignment.template?.name ?? "Formulario"}
             </h3>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <User className="h-3 w-3" />
-              <span>Enviado el {date}</span>
+            <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+              <span className="flex items-center gap-1">
+                <User className="h-3 w-3" />
+                Enviado el {date}
+              </span>
+              {windowStatus.hasWindow && isPending && (
+                <span
+                  className={`flex items-center gap-1 ${
+                    windowStatus.isOverdue
+                      ? "text-red-400"
+                      : windowStatus.isBeforeWindow
+                        ? "text-gray-500"
+                        : "text-orange-400"
+                  }`}
+                >
+                  <Calendar className="h-3 w-3" />
+                  {windowStatus.statusText}
+                </span>
+              )}
+              {assignment.repeat && assignment.repeat !== "none" && (
+                <span className="flex items-center gap-1 text-blue-400">
+                  <Repeat className="h-3 w-3" />
+                  {REPEAT_LABELS[assignment.repeat]}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {isPending ? (
+          {isMissed ? (
+            <Badge
+              variant="secondary"
+              className="border-0 bg-red-500/10 text-red-400 text-xs"
+            >
+              <AlertCircle className="mr-1 h-3 w-3" />
+              No completado
+            </Badge>
+          ) : isPending ? (
             <>
-              <Badge
-                variant="secondary"
-                className="border-0 bg-orange-500/10 text-orange-400 text-xs hidden sm:flex"
-              >
-                <Clock className="mr-1 h-3 w-3" />
-                Pendiente
-              </Badge>
+              {windowStatus.isBeforeWindow ? (
+                <Badge
+                  variant="secondary"
+                  className="border-0 bg-gray-700/50 text-gray-400 text-xs hidden sm:flex"
+                >
+                  <Lock className="mr-1 h-3 w-3" />
+                  Bloqueado
+                </Badge>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="border-0 bg-orange-500/10 text-orange-400 text-xs hidden sm:flex"
+                >
+                  <Clock className="mr-1 h-3 w-3" />
+                  Pendiente
+                </Badge>
+              )}
               <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-white transition-colors" />
             </>
           ) : (
@@ -115,12 +182,29 @@ export default function ClientFormsPage() {
       </>
     );
 
-    const className =
-      "group flex items-center justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-4 transition-colors cursor-pointer hover:border-gray-700 hover:bg-gray-900/80";
+    const className = `group flex items-center justify-between rounded-2xl border bg-gray-900/60 p-4 transition-colors ${
+      windowStatus.isBeforeWindow && isPending
+        ? "border-gray-800 cursor-default opacity-60"
+        : "border-gray-800 cursor-pointer hover:border-gray-700 hover:bg-gray-900/80"
+    }`;
 
     const href = isPending
       ? `/member/forms/${assignment.id}`
       : `/member/forms/${assignment.id}/response`;
+
+    // Si está bloqueado (antes de la ventana), no hacer link
+    if (windowStatus.isBeforeWindow && isPending) {
+      return (
+        <motion.div
+          key={assignment.id}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+        >
+          <div className={className}>{content}</div>
+        </motion.div>
+      );
+    }
 
     return (
       <motion.div

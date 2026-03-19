@@ -11,6 +11,9 @@ import {
   Ruler,
   Camera,
   Type,
+  Lock,
+  AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PhotoUpload } from "../../../components/forms/PhotoUpload";
 import type { FormAssignment, CustomField } from "../../../lib/types/forms";
+import { getAssignmentWindowStatus } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "../../../lib/supabase/browser";
 import { uploadPhotoWithPresignedUrl } from "../../../lib/forms-upload";
 
@@ -237,6 +241,98 @@ export default function FillFormPage({
     );
   }
 
+  const windowStatus = getAssignmentWindowStatus(assignment);
+
+  // Check if already completed
+  if (assignment.status === "completed") {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
+          <CheckCircle2 className="h-10 w-10 text-green-400" />
+        </div>
+        <h2 className="mt-6 text-2xl font-bold text-white">
+          Formulario completado
+        </h2>
+        <p className="mt-2 text-gray-400 text-center max-w-sm">
+          Ya has completado este formulario.
+        </p>
+        <Button
+          onClick={() => router.push(`/member/forms/${assignment.id}/response`)}
+          variant="outline"
+          className="mt-6 gap-2 border-gray-700 text-gray-300 hover:bg-gray-800"
+        >
+          Ver mi respuesta
+        </Button>
+        <Button
+          onClick={() => router.push("/member/forms")}
+          className="mt-2 gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+        >
+          Volver a formularios
+        </Button>
+      </div>
+    );
+  }
+
+  // Check if before window (locked)
+  if (windowStatus.isBeforeWindow) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-800">
+          <Lock className="h-10 w-10 text-gray-500" />
+        </div>
+        <h2 className="mt-6 text-2xl font-bold text-white">
+          Formulario bloqueado
+        </h2>
+        <p className="mt-2 text-gray-400 text-center max-w-sm">
+          Este formulario aún no está disponible para completar.
+        </p>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-gray-800/50 px-4 py-3 text-sm">
+          <Calendar className="h-4 w-4 text-orange-400" />
+          <span className="text-gray-300">
+            Disponible desde{" "}
+            <span className="font-medium text-white">
+              {windowStatus.windowStartFormatted}
+            </span>
+          </span>
+        </div>
+        <Button
+          onClick={() => router.push("/member/forms")}
+          className="mt-6 gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+        >
+          Volver a formularios
+        </Button>
+      </div>
+    );
+  }
+
+  // Check if overdue (missed)
+  if (windowStatus.isOverdue) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-500/20">
+          <AlertCircle className="h-10 w-10 text-red-400" />
+        </div>
+        <h2 className="mt-6 text-2xl font-bold text-white">Tiempo agotado</h2>
+        <p className="mt-2 text-gray-400 text-center max-w-sm">
+          La fecha límite para completar este formulario ha pasado.
+        </p>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm">
+          <Calendar className="h-4 w-4 text-red-400" />
+          <span className="text-red-300">
+            Fecha límite:{" "}
+            <span className="font-medium">{windowStatus.dueAtFormatted}</span>
+          </span>
+        </div>
+        <Button
+          onClick={() => router.push("/member/forms")}
+          className="mt-6 gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+        >
+          Volver a formularios
+        </Button>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <motion.div
@@ -287,6 +383,12 @@ export default function FillFormPage({
           </h1>
           {template?.description && (
             <p className="mt-1 text-sm text-gray-400">{template.description}</p>
+          )}
+          {windowStatus.hasWindow && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <Calendar className="h-3.5 w-3.5 text-orange-400" />
+              <span className="text-orange-400">{windowStatus.statusText}</span>
+            </div>
           )}
         </div>
       </div>

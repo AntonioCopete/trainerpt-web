@@ -188,7 +188,19 @@ export interface UpdateTemplatePayload extends CreateTemplatePayload {
 
 // --- Sent Form (assignment to a client) ---
 
-export type FormAssignmentStatus = "pending" | "completed";
+export type FormAssignmentStatus =
+  | "pending"
+  | "completed"
+  | "missed"
+  | "archived";
+
+export type RepeatCadence = "none" | "weekly" | "monthly";
+
+export const REPEAT_LABELS: Record<RepeatCadence, string> = {
+  none: "Una vez",
+  weekly: "Semanal",
+  monthly: "Mensual",
+};
 
 export interface FormAssignment {
   id: string;
@@ -202,8 +214,12 @@ export interface FormAssignment {
   createdAt: string;
   /** @deprecated Usar createdAt; mantener por compatibilidad con backend */
   sentAt?: string;
-  /** Fecha límite opcional para completar */
+  /** Fecha límite para completar */
   dueAt?: string | null;
+  /** Inicio de ventana para completar (dueAt - 48h) */
+  windowStart?: string | null;
+  /** Cadencia de repetición */
+  repeat?: RepeatCadence;
 }
 
 /** Fecha de envío para mostrar; acepta createdAt o sentAt (legacy) */
@@ -239,6 +255,86 @@ export function formatResponseDate(submittedAt: string | undefined): string {
 export interface SendFormPayload {
   templateId: string;
   clientId: string;
+  dueAt?: string;
+  repeat?: RepeatCadence;
+}
+
+// --- Window helpers ---
+
+export interface AssignmentWindowStatus {
+  /** Si el assignment tiene ventana de tiempo configurada */
+  hasWindow: boolean;
+  /** Si estamos dentro de la ventana (puede rellenar) */
+  isInWindow: boolean;
+  /** Si ya pasó la fecha límite */
+  isOverdue: boolean;
+  /** Si aún no llegó la ventana */
+  isBeforeWindow: boolean;
+  /** Texto descriptivo del estado */
+  statusText: string;
+  /** Fecha formateada de dueAt */
+  dueAtFormatted: string | null;
+  /** Fecha formateada de windowStart */
+  windowStartFormatted: string | null;
+}
+
+export function getAssignmentWindowStatus(assignment: {
+  dueAt?: string | null;
+  windowStart?: string | null;
+  status?: FormAssignmentStatus;
+}): AssignmentWindowStatus {
+  const now = new Date();
+  const dueAt = assignment.dueAt ? new Date(assignment.dueAt) : null;
+  const windowStart = assignment.windowStart
+    ? new Date(assignment.windowStart)
+    : null;
+
+  const hasWindow = dueAt !== null;
+
+  const formatDate = (d: Date | null) =>
+    d
+      ? d.toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+  if (!hasWindow) {
+    return {
+      hasWindow: false,
+      isInWindow: true,
+      isOverdue: false,
+      isBeforeWindow: false,
+      statusText: "Sin fecha límite",
+      dueAtFormatted: null,
+      windowStartFormatted: null,
+    };
+  }
+
+  const isOverdue = dueAt !== null && now > dueAt;
+  const isBeforeWindow = windowStart !== null && now < windowStart;
+  const isInWindow = !isOverdue && !isBeforeWindow;
+
+  let statusText = "";
+  if (isOverdue) {
+    statusText = "Fecha límite pasada";
+  } else if (isBeforeWindow) {
+    statusText = `Disponible desde ${formatDate(windowStart)}`;
+  } else {
+    statusText = `Completar antes del ${formatDate(dueAt)}`;
+  }
+
+  return {
+    hasWindow: true,
+    isInWindow,
+    isOverdue,
+    isBeforeWindow,
+    statusText,
+    dueAtFormatted: formatDate(dueAt),
+    windowStartFormatted: formatDate(windowStart),
+  };
 }
 
 // --- Form Response (client submission) ---

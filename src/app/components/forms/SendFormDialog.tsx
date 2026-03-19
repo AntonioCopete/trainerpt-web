@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Send, User } from "lucide-react";
+import { Search, Send, User, Calendar, Repeat } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { FormTemplate, MemberSummary } from "../../lib/types/forms";
+import { Label } from "@/components/ui/label";
+import type {
+  FormTemplate,
+  MemberSummary,
+  RepeatCadence,
+} from "../../lib/types/forms";
+import { REPEAT_LABELS } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 import { toast } from "sonner";
 
@@ -36,6 +42,8 @@ export function SendFormDialog({
   const [search, setSearch] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [repeat, setRepeat] = useState<RepeatCadence>("none");
+  const [dueAt, setDueAt] = useState<string>("");
   const supabase = createSupabaseBrowser();
 
   const getMembers = useCallback(async () => {
@@ -61,6 +69,8 @@ export function SendFormDialog({
       getMembers();
       setSearch("");
       setSelectedMemberId(preselectedMemberId ?? null);
+      setRepeat("none");
+      setDueAt("");
     }
   }, [open, preselectedMemberId, getMembers]);
 
@@ -79,11 +89,20 @@ export function SendFormDialog({
     try {
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token;
+
+      const payload: Record<string, unknown> = { memberId: selectedMemberId };
+      if (repeat !== "none") {
+        payload.repeat = repeat;
+      }
+      if (dueAt) {
+        payload.dueAt = new Date(dueAt).toISOString();
+      }
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/template/${template.id}/assign`,
         {
           method: "POST",
-          body: JSON.stringify({ memberId: selectedMemberId }),
+          body: JSON.stringify(payload),
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -193,6 +212,54 @@ export function SendFormDialog({
             el botón desde una plantilla.
           </p>
         )}
+
+        {/* Scheduling options */}
+        <div className="space-y-4 border-t border-gray-800 pt-4">
+          <div className="space-y-2">
+            <Label className="text-sm text-gray-300 flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Fecha límite
+            </Label>
+            <Input
+              type="datetime-local"
+              value={dueAt}
+              onChange={(e) => setDueAt(e.target.value)}
+              className="h-10 rounded-xl border-gray-700 bg-gray-800 text-white focus:border-red-500 focus:ring-red-500/20"
+            />
+            <p className="text-xs text-gray-500">
+              El cliente podrá rellenar 48h antes de la fecha límite
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm text-gray-300 flex items-center gap-2">
+              <Repeat className="h-4 w-4" />
+              Repetición
+            </Label>
+            <div className="flex gap-2">
+              {(Object.keys(REPEAT_LABELS) as RepeatCadence[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRepeat(key)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    repeat === key
+                      ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                      : "bg-gray-800 text-gray-400 border border-transparent hover:bg-gray-700"
+                  }`}
+                >
+                  {REPEAT_LABELS[key]}
+                </button>
+              ))}
+            </div>
+            {repeat !== "none" && (
+              <p className="text-xs text-gray-500">
+                Se creará automáticamente un nuevo formulario cada{" "}
+                {repeat === "weekly" ? "semana" : "mes"}
+              </p>
+            )}
+          </div>
+        </div>
 
         <DialogFooter>
           <Button
