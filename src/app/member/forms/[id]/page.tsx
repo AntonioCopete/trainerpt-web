@@ -487,6 +487,8 @@ export default function FillFormPage({
                       photoType="front"
                       value={photos[field.id] ?? null}
                       onChange={(file) => updatePhoto(field.id, file)}
+                      showLabel={false}
+                      labelText={field.label}
                     />
                   </div>
                 ))}

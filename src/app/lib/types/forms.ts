@@ -296,8 +296,7 @@ export function getAssignmentWindowStatus(assignment: {
       ? d.toLocaleDateString("es-ES", {
           day: "numeric",
           month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
+          year: "numeric",
         })
       : null;
 

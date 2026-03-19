@@ -112,6 +112,8 @@ export function ResponseViewer({
                       value={url}
                       readOnly
                       compact
+                      showLabel={false}
+                      labelText={field.label}
                     />
                   </div>
                 );

@@ -95,7 +95,7 @@ export function SendFormDialog({
         payload.repeat = repeat;
       }
       if (dueAt) {
-        payload.dueAt = new Date(dueAt).toISOString();
+        payload.dueAt = dueAt;
       }
 
       const res = await fetch(
@@ -221,7 +221,7 @@ export function SendFormDialog({
               Fecha límite
             </Label>
             <Input
-              type="datetime-local"
+              type="date"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
               className="h-10 rounded-xl border-gray-700 bg-gray-800 text-white focus:border-red-500 focus:ring-red-500/20"

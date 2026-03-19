@@ -24,6 +24,10 @@ interface PhotoUploadProps {
   value: File | string | null;
   onChange?: (file: File | null) => void;
   readOnly?: boolean;
+  /** When false, hides internal label/header to avoid duplicating labels in the parent */
+  showLabel?: boolean;
+  /** Override for `alt`/aria text when the parent already provides the label */
+  labelText?: string;
   /** En modo readOnly: thumbnail más compacto para listados/respuestas */
   compact?: boolean;
 }
@@ -33,6 +37,8 @@ export function PhotoUpload({
   value,
   onChange,
   readOnly = false,
+  showLabel = true,
+  labelText,
   compact = false,
 }: PhotoUploadProps) {
   const [preview, setPreview] = useState<string | null>(
@@ -97,7 +103,7 @@ export function PhotoUpload({
     setIsDragging(false);
   }, []);
 
-  const label = PHOTO_LABELS[photoType];
+  const label = labelText ?? PHOTO_LABELS[photoType] ?? "Foto";
 
   // Read-only display with image
   if (readOnly) {
@@ -161,12 +167,14 @@ export function PhotoUpload({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-gray-400">{label}</p>
-        <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
-          Obligatorio
-        </span>
-      </div>
+      {showLabel && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-gray-400">{label}</p>
+          <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+            Obligatorio
+          </span>
+        </div>
+      )}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -218,9 +226,9 @@ export function PhotoUpload({
                   ? "Suelta la imagen"
                   : "Arrastra o pulsa para subir"}
             </span>
-            <span className="text-[10px] text-gray-600">
-              {photoType === "front" ? "Vista frontal" : "Vista lateral"}
-            </span>
+            {showLabel && (
+              <span className="text-[10px] text-gray-600">Foto</span>
+            )}
             <input
               type="file"
               accept="image/*"
