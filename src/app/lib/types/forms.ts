@@ -297,6 +297,9 @@ export function getAssignmentWindowStatus(assignment: {
           day: "numeric",
           month: "short",
           year: "numeric",
+          // `dueAt`/`windowStart` se calculan en backend como "fin/inicio de día" en UTC.
+          // Para evitar off-by-one por timezone local, formateamos la fecha siempre en UTC.
+          timeZone: "UTC",
         })
       : null;
 
