@@ -200,7 +200,7 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm text-gray-300">Descripcion</Label>
+              <Label className="text-sm text-gray-300">Descripción</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
