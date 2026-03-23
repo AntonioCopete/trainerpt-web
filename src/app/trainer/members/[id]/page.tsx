@@ -2,11 +2,13 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowLeft,
   User,
   Mail,
   ClipboardList,
+  Dumbbell,
   Send,
   Clock,
   CheckCircle2,
@@ -31,6 +33,11 @@ import {
 } from "@/src/app/lib/types/forms";
 import { SendFormDialog } from "@/src/app/components/forms/SendFormDialog";
 import type { FormTemplate } from "@/src/app/lib/types/forms";
+import type {
+  RoutineTemplate,
+  RoutineAssignment,
+} from "@/src/app/lib/types/routines";
+import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { toast } from "sonner";
 
 export default function TrainerClientDetailPage({
@@ -44,10 +51,20 @@ export default function TrainerClientDetailPage({
   const [loading, setLoading] = useState(true);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
+  const [routineTemplates, setRoutineTemplates] = useState<RoutineTemplate[]>(
+    [],
+  );
   const [assignments, setAssignments] = useState<FormAssignment[]>([]);
+  const [routineAssignments, setRoutineAssignments] = useState<
+    RoutineAssignment[]
+  >([]);
   const [templateToSend, setTemplateToSend] = useState<FormTemplate | null>(
     null,
   );
+  const [routineToSend, setRoutineToSend] = useState<RoutineTemplate | null>(
+    null,
+  );
+  const [routineDialogOpen, setRoutineDialogOpen] = useState(false);
   const [cancellingAssignmentId, setCancellingAssignmentId] = useState<
     string | null
   >(null);
@@ -79,6 +96,28 @@ export default function TrainerClientDetailPage({
       setAssignments(list);
     } else {
       setAssignments([]);
+    }
+  };
+
+  const refreshRoutineAssignments = async () => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    if (!token) return;
+
+    const routineAssignmentsRes = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/assignments?memberId=${id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    );
+
+    if (routineAssignmentsRes.ok) {
+      const data = await routineAssignmentsRes.json();
+      const list: RoutineAssignment[] = data.assignments ?? data ?? [];
+      setRoutineAssignments(list);
+    } else {
+      setRoutineAssignments([]);
     }
   };
 
@@ -151,7 +190,13 @@ export default function TrainerClientDetailPage({
         const session = await supabase.auth.getSession();
         const token = session?.data?.session?.access_token;
 
-        const [membersRes, templatesRes, assignmentsRes] = await Promise.all([
+        const [
+          membersRes,
+          templatesRes,
+          assignmentsRes,
+          routineTemplatesRes,
+          routineAssignmentsRes,
+        ] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/members/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
@@ -162,6 +207,17 @@ export default function TrainerClientDetailPage({
           }),
           fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/forms/assignments?memberId=${id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: "no-store",
+            },
+          ),
+          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/assignments?memberId=${id}`,
             {
               headers: { Authorization: `Bearer ${token}` },
               cache: "no-store",
@@ -182,6 +238,10 @@ export default function TrainerClientDetailPage({
           const data = await templatesRes.json();
           setTemplates(data.templates ?? []);
         }
+        if (routineTemplatesRes.ok) {
+          const data = await routineTemplatesRes.json();
+          setRoutineTemplates(data.templates ?? []);
+        }
 
         if (assignmentsRes.ok) {
           const data = await assignmentsRes.json();
@@ -189,6 +249,14 @@ export default function TrainerClientDetailPage({
           setAssignments(list);
         } else {
           setAssignments([]);
+        }
+
+        if (routineAssignmentsRes.ok) {
+          const data = await routineAssignmentsRes.json();
+          const list: RoutineAssignment[] = data.assignments ?? data ?? [];
+          setRoutineAssignments(list);
+        } else {
+          setRoutineAssignments([]);
         }
       } catch {
         if (!cancelled) setMember(null);
@@ -340,6 +408,108 @@ export default function TrainerClientDetailPage({
         )}
       </div>
 
+      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <Dumbbell className="h-4 w-4 text-orange-400" />
+          Asignar rutina
+        </h2>
+        {routineTemplates.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No tienes rutinas. Crea una en Rutinas para poder asignarla.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {routineTemplates.map((tpl) => (
+              <div
+                key={tpl.id}
+                className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+              >
+                <div>
+                  <p className="font-medium text-white">{tpl.name}</p>
+                  {tpl.description && (
+                    <p className="max-w-md truncate text-xs text-gray-500">
+                      {tpl.description}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setRoutineToSend(tpl);
+                    setRoutineDialogOpen(true);
+                  }}
+                  className="shrink-0 gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Asignar
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+        <h2 className="mb-4 text-sm font-semibold text-white">
+          Historial de rutinas
+        </h2>
+        <div className="mb-4">
+          <Link
+            href={`/trainer/routines/assignments?memberId=${id}`}
+            className="inline-flex items-center rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+          >
+            Ver página de asignaciones de rutinas
+          </Link>
+        </div>
+        {routineAssignments.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            Aún no has asignado ninguna rutina a este member.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {routineAssignments.map((assignment) => (
+              <div
+                key={assignment.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-white">
+                    {assignment.template?.name ?? "Rutina"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(assignment.startDate).toLocaleDateString(
+                      "es-ES",
+                      {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      },
+                    )}{" "}
+                    -{" "}
+                    {new Date(assignment.endDate).toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </p>
+                </div>
+                <span className="rounded-full bg-gray-700/60 px-2 py-0.5 text-[11px] font-medium text-gray-200">
+                  {assignment.computedStatus === "active"
+                    ? "Activa"
+                    : assignment.computedStatus === "scheduled"
+                      ? "Programada"
+                      : assignment.computedStatus === "archived"
+                        ? "Archivada"
+                        : "Finalizada"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Historial de formularios de este miembro */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
         <h2 className="mb-4 text-sm font-semibold text-white">
@@ -466,6 +636,19 @@ export default function TrainerClientDetailPage({
         template={templateToSend}
         preselectedMemberId={id}
         onSent={() => setSendDialogOpen(false)}
+      />
+      <AssignRoutineDialog
+        open={routineDialogOpen}
+        onOpenChange={(open) => {
+          setRoutineDialogOpen(open);
+          if (!open) setRoutineToSend(null);
+        }}
+        template={routineToSend}
+        preselectedMemberId={id}
+        onAssigned={() => {
+          setRoutineDialogOpen(false);
+          void refreshRoutineAssignments();
+        }}
       />
     </div>
   );

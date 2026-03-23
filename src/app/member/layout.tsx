@@ -16,7 +16,7 @@ const NAV_ITEMS = [
     label: "Rutinas",
     href: "/member/routines",
     icon: Dumbbell,
-    active: false,
+    active: true,
   },
   {
     label: "Dietas",
