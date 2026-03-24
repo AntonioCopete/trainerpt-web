@@ -316,7 +316,7 @@ export function RoutineTemplateDialog({
                       key={exercise.id}
                       className="flex items-center justify-between gap-2 rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="truncate text-sm text-gray-100">
                           {exercise.name}
                         </p>
@@ -338,48 +338,50 @@ export function RoutineTemplateDialog({
                           "line-clamp-2 text-xs text-gray-500 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1",
                         )}
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={alreadyAdded}
-                        onClick={() => addExercise(exercise)}
-                        className="h-7 border-gray-600 bg-transparent px-2 text-gray-300 hover:bg-gray-700"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setExerciseDetail({
-                            exerciseId: exercise.id,
-                            name: exercise.name,
-                            description: normalizeDescription(
-                              exercise.description,
-                            ),
-                            categoryName: exercise.categoryName ?? null,
-                            source: exercise.source,
-                            trainerId: exercise.trainerId,
-                            author:
-                              exercise.author ??
-                              (exercise.source === "custom"
-                                ? "Tú"
-                                : "Biblioteca"),
-                            license: exercise.license ?? null,
-                            imageUrl: exercise.imageUrl ?? null,
-                            videoUrl: exercise.videoUrl ?? null,
-                            imageUrls: exercise.imageUrls ?? [],
-                            videoUrls: exercise.videoUrls ?? [],
-                            order: 0,
-                          });
-                          setDetailOpen(true);
-                        }}
-                        className="h-7 px-2 text-gray-300 hover:bg-gray-700"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="ml-2 flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={alreadyAdded}
+                          onClick={() => addExercise(exercise)}
+                          className="h-7 border-gray-600 bg-transparent px-2 text-gray-300 hover:bg-gray-700"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setExerciseDetail({
+                              exerciseId: exercise.id,
+                              name: exercise.name,
+                              description: normalizeDescription(
+                                exercise.description,
+                              ),
+                              categoryName: exercise.categoryName ?? null,
+                              source: exercise.source,
+                              trainerId: exercise.trainerId,
+                              author:
+                                exercise.author ??
+                                (exercise.source === "custom"
+                                  ? "Tú"
+                                  : "Biblioteca"),
+                              license: exercise.license ?? null,
+                              imageUrl: exercise.imageUrl ?? null,
+                              videoUrl: exercise.videoUrl ?? null,
+                              imageUrls: exercise.imageUrls ?? [],
+                              videoUrls: exercise.videoUrls ?? [],
+                              order: 0,
+                            });
+                            setDetailOpen(true);
+                          }}
+                          className="h-7 px-2 text-gray-300 hover:bg-gray-700"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })
