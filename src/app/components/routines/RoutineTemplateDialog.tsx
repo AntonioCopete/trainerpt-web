@@ -333,10 +333,6 @@ export function RoutineTemplateDialog({
                               : "Biblioteca"}
                           </span>
                         </div>
-                        {renderExerciseDescription(
-                          exercise.description,
-                          "line-clamp-2 text-xs text-gray-500 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1",
-                        )}
                       </div>
                       <div className="ml-2 flex shrink-0 items-center gap-1">
                         <Button
@@ -456,34 +452,6 @@ export function RoutineTemplateDialog({
                         Ver detalle completo
                       </Button>
                     </div>
-                    {renderExerciseDescription(
-                      exercise.description,
-                      "mt-2 text-xs text-gray-400 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1",
-                    )}
-                    {(exercise.imageUrl || exercise.videoUrl) && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        {exercise.imageUrl && (
-                          <a
-                            href={exercise.imageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-gray-700 px-2 py-1 text-blue-300 hover:bg-gray-800"
-                          >
-                            Ver imagen
-                          </a>
-                        )}
-                        {exercise.videoUrl && (
-                          <a
-                            href={exercise.videoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-gray-700 px-2 py-1 text-blue-300 hover:bg-gray-800"
-                          >
-                            Ver video
-                          </a>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))
               )}
