@@ -38,6 +38,7 @@ import type {
   RoutineAssignment,
 } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
+import { CustomRoutineDialog } from "@/src/app/components/routines/CustomRoutineDialog";
 import { toast } from "sonner";
 
 export default function TrainerClientDetailPage({
@@ -65,6 +66,7 @@ export default function TrainerClientDetailPage({
     null,
   );
   const [routineDialogOpen, setRoutineDialogOpen] = useState(false);
+  const [customRoutineDialogOpen, setCustomRoutineDialogOpen] = useState(false);
   const [cancellingAssignmentId, setCancellingAssignmentId] = useState<
     string | null
   >(null);
@@ -453,13 +455,21 @@ export default function TrainerClientDetailPage({
         <h2 className="mb-4 text-sm font-semibold text-white">
           Historial de rutinas
         </h2>
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Link
             href={`/trainer/routines/assignments?memberId=${id}`}
             className="inline-flex items-center rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
           >
             Ver página de asignaciones de rutinas
           </Link>
+          <Button
+            onClick={() => setCustomRoutineDialogOpen(true)}
+            size="sm"
+            className="gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+          >
+            <Dumbbell className="h-3.5 w-3.5" />
+            Nueva rutina personalizada
+          </Button>
         </div>
         {routineAssignments.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -647,6 +657,16 @@ export default function TrainerClientDetailPage({
         preselectedMemberId={id}
         onAssigned={() => {
           setRoutineDialogOpen(false);
+          void refreshRoutineAssignments();
+        }}
+      />
+      <CustomRoutineDialog
+        open={customRoutineDialogOpen}
+        onOpenChange={setCustomRoutineDialogOpen}
+        memberId={id}
+        memberName={member?.fullName || member?.email || "Cliente"}
+        onCreated={() => {
+          setCustomRoutineDialogOpen(false);
           void refreshRoutineAssignments();
         }}
       />

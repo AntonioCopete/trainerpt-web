@@ -22,67 +22,35 @@ import type {
 import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
 
-interface RoutineTemplateDialogProps {
+interface CustomRoutineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (payload: {
-    name: string;
-    description: string;
-    schema: RoutineTemplateExercise[];
-  }) => Promise<void>;
-  initialTemplate?: RoutineTemplate | null;
+  memberId: string;
+  memberName: string;
+  onCreated?: () => void;
 }
 
-export function RoutineTemplateDialog({
+export function CustomRoutineDialog({
   open,
   onOpenChange,
-  onSubmit,
-  initialTemplate,
-}: RoutineTemplateDialogProps) {
-  const normalizeDescription = (value: unknown): string | string[] | null => {
-    if (Array.isArray(value)) {
-      const lines = value
-        .map((line) => (typeof line === "string" ? line.trim() : ""))
-        .filter(Boolean);
-      return lines.length > 0 ? lines : null;
-    }
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      return trimmed.length > 0 ? trimmed : null;
-    }
+  memberId,
+  memberName,
+  onCreated,
+}: CustomRoutineDialogProps) {
+  const normalizeDescription = (
+    value: string | string[] | null | undefined,
+  ): string | string[] | null => {
+    if (!value) return null;
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return value;
     return null;
   };
 
-  const normalizeExerciseFromApi = (exercise: any): RoutineExercise => ({
-    ...exercise,
-    name: exercise?.nameEs ?? exercise?.name ?? "Ejercicio",
-    description:
-      normalizeDescription(exercise?.descriptionEs) ??
-      normalizeDescription(exercise?.description),
-    categoryName: exercise?.categoryNameEs ?? exercise?.categoryName ?? null,
-  });
-
-  const renderExerciseDescription = (
-    value: string | string[] | null | undefined,
-    className: string,
-  ) => {
-    if (!value) return null;
-    if (Array.isArray(value)) {
-      const lines = value.map((line) => line?.trim()).filter(Boolean);
-      if (lines.length === 0) return null;
-      return (
-        <ul className={className}>
-          {lines.map((line, idx) => (
-            <li key={`${idx}-${line}`}>{line}</li>
-          ))}
-        </ul>
-      );
-    }
-    return <SafeHtml html={value} className={className} />;
-  };
-
+  const supabase = createSupabaseBrowser();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [exerciseSearch, setExerciseSearch] = useState("");
   const [exerciseResults, setExerciseResults] = useState<RoutineExercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<
@@ -98,8 +66,9 @@ export function RoutineTemplateDialog({
   const [detailOpen, setDetailOpen] = useState(false);
   const [exerciseDetail, setExerciseDetail] =
     useState<RoutineTemplateExercise | null>(null);
-  const isEdit = Boolean(initialTemplate);
-  const supabase = createSupabaseBrowser();
+  const [baseTemplateId, setBaseTemplateId] = useState<string>("");
+  const [templates, setTemplates] = useState<RoutineTemplate[]>([]);
+
   const visibleExerciseResults = useMemo(
     () => exerciseResults.slice(0, 100),
     [exerciseResults],
@@ -107,10 +76,60 @@ export function RoutineTemplateDialog({
 
   useEffect(() => {
     if (!open) return;
-    setName(initialTemplate?.name ?? "");
-    setDescription(initialTemplate?.description ?? "");
-    const existingSchema = Array.isArray(initialTemplate?.schema)
-      ? initialTemplate.schema
+    setName("");
+    setDescription("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedExercises([]);
+    setTrainingTitles([]);
+    setBaseTemplateId("");
+    setExerciseSearch("");
+
+    const activeElement = document.activeElement as HTMLElement;
+    if (activeElement && activeElement.tagName === "INPUT") {
+      activeElement.blur();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    async function fetchTemplates() {
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        const data = await res.json();
+        if (!cancelled) {
+          setTemplates(data.templates ?? []);
+        }
+      } catch {
+        if (!cancelled) setTemplates([]);
+      }
+    }
+
+    void fetchTemplates();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!baseTemplateId || !templates.length) return;
+    const template = templates.find((t) => t.id === baseTemplateId);
+    if (!template) return;
+
+    setName(template.name);
+    setDescription(template.description);
+    const existingSchema = Array.isArray(template.schema)
+      ? template.schema
       : [];
     setSelectedExercises(
       existingSchema
@@ -171,7 +190,7 @@ export function RoutineTemplateDialog({
     setTrainingTitles(
       inferredTrainingTitles.length > 0 ? inferredTrainingTitles : [],
     );
-  }, [open, initialTemplate]);
+  }, [baseTemplateId, templates]);
 
   useEffect(() => {
     if (!open) return;
@@ -182,20 +201,17 @@ export function RoutineTemplateDialog({
       try {
         const session = await supabase.auth.getSession();
         const token = session?.data?.session?.access_token;
-        const query = exerciseSearch.trim();
-        const url = query
-          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/exercises?q=${encodeURIComponent(query)}`
+        const q = exerciseSearch.trim();
+        const url = q
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/exercises?q=${encodeURIComponent(q)}`
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/exercises`;
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json();
         if (!cancelled) {
-          const normalized = Array.isArray(data.exercises)
-            ? data.exercises.map(normalizeExerciseFromApi)
-            : [];
-          setExerciseResults(normalized);
+          setExerciseResults(data.exercises ?? []);
         }
       } catch {
         if (!cancelled) {
@@ -215,65 +231,6 @@ export function RoutineTemplateDialog({
       clearTimeout(timer);
     };
   }, [open, exerciseSearch]);
-
-  useEffect(() => {
-    if (exerciseResults.length === 0) return;
-    const exerciseById = new Map(
-      exerciseResults.map((exercise) => [exercise.id, exercise]),
-    );
-
-    setSelectedExercises((prev) =>
-      prev.map((item) => {
-        const sourceExercise = exerciseById.get(item.exerciseId);
-        if (!sourceExercise) return item;
-
-        const sourceImageUrls =
-          sourceExercise.imageUrls ??
-          (sourceExercise.imageUrl ? [sourceExercise.imageUrl] : []);
-        const sourceVideoUrls =
-          sourceExercise.videoUrls ??
-          (sourceExercise.videoUrl ? [sourceExercise.videoUrl] : []);
-
-        const nextImageUrls =
-          item.imageUrls && item.imageUrls.length > 0
-            ? item.imageUrls
-            : sourceImageUrls;
-        const nextVideoUrls =
-          item.videoUrls && item.videoUrls.length > 0
-            ? item.videoUrls
-            : sourceVideoUrls;
-
-        return {
-          ...item,
-          source: item.source ?? sourceExercise.source,
-          trainerId: item.trainerId ?? sourceExercise.trainerId ?? null,
-          author:
-            item.author ??
-            sourceExercise.author ??
-            (sourceExercise.source === "custom" ? "Tú" : "Biblioteca"),
-          license: item.license ?? sourceExercise.license ?? null,
-          name: item.name || sourceExercise.name,
-          description:
-            item.description ??
-            normalizeDescription(sourceExercise.description),
-          categoryName:
-            item.categoryName ?? sourceExercise.categoryName ?? null,
-          imageUrl:
-            item.imageUrl ??
-            sourceExercise.imageUrl ??
-            nextImageUrls[0] ??
-            null,
-          videoUrl:
-            item.videoUrl ??
-            sourceExercise.videoUrl ??
-            nextVideoUrls[0] ??
-            null,
-          imageUrls: nextImageUrls,
-          videoUrls: nextVideoUrls,
-        };
-      }),
-    );
-  }, [exerciseResults]);
 
   const addExercise = (exercise: RoutineExercise, trainingTitle: string) => {
     if (!trainingTitle) {
@@ -344,7 +301,11 @@ export function RoutineTemplateDialog({
 
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim()) {
-      toast.error("Completa nombre y descripcion");
+      toast.error("Completa nombre y descripción");
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error("Completa las fechas de inicio y fin");
       return;
     }
     if (selectedExercises.length === 0) {
@@ -361,15 +322,42 @@ export function RoutineTemplateDialog({
 
     setSaving(true);
     try {
-      await onSubmit({
-        name: name.trim(),
-        description: description.trim(),
-        schema: selectedExercises.map((item, index) => ({
-          ...item,
-          order: index,
-        })),
-      });
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/assignments/custom`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            memberId,
+            name: name.trim(),
+            description: description.trim(),
+            schema: selectedExercises.map((item, index) => ({
+              ...item,
+              order: index,
+            })),
+            startDate,
+            endDate,
+          }),
+        },
+      );
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.message ?? "No se pudo crear la rutina");
+        return;
+      }
+
+      toast.success("Rutina personalizada asignada correctamente");
+      onCreated?.();
       onOpenChange(false);
+    } catch {
+      toast.error("Error al crear la rutina");
     } finally {
       setSaving(false);
     }
@@ -380,18 +368,57 @@ export function RoutineTemplateDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-auto border-gray-800 bg-gray-900 p-5 text-white sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>
-              {isEdit
-                ? "Editar plantilla de rutina"
-                : "Nueva plantilla de rutina"}
-            </DialogTitle>
+            <DialogTitle>Nueva rutina personalizada</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Selecciona ejercicios existentes y define instrucciones por
-              ejercicio.
+              Crea una rutina personalizada para {memberName}. Puedes partir
+              desde cero o usar una plantilla como base.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 overflow-x-hidden">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400">
+                Plantilla base (opcional)
+              </label>
+              <select
+                value={baseTemplateId}
+                onChange={(e) => setBaseTemplateId(e.target.value)}
+                className="h-10 w-full appearance-none rounded-lg border border-gray-700 bg-gray-800 px-3 text-sm text-gray-100 outline-none transition-colors focus:border-red-500"
+              >
+                <option value="">Empezar desde cero</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400">
+                  Desde
+                </label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border-gray-700 bg-gray-800 text-gray-100"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400">
+                  Hasta
+                </label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border-gray-700 bg-gray-800 text-gray-100"
+                />
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">
                 Nombre
@@ -605,7 +632,7 @@ export function RoutineTemplateDialog({
                       </p>
                       {group.exercises.length === 0 ? (
                         <p className="text-xs text-gray-500">
-                          Sin ejercicios en este entrenamiento.
+                          Sin ejercicios en este entrenamiento
                         </p>
                       ) : (
                         <div className="space-y-2">
@@ -696,7 +723,7 @@ export function RoutineTemplateDialog({
               disabled={saving}
               className="bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
             >
-              {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
+              {saving ? "Creando..." : "Crear y asignar"}
             </Button>
           </DialogFooter>
         </DialogContent>

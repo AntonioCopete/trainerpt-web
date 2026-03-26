@@ -54,6 +54,15 @@ export interface AssignRoutinePayload {
   endDate: string;
 }
 
+export interface CreateCustomRoutinePayload {
+  memberId: string;
+  name: string;
+  description: string;
+  schema: RoutineTemplateExercise[];
+  startDate: string;
+  endDate: string;
+}
+
 export interface RoutineExercise {
   id: string;
   source: "wger" | "free_exercise_db" | "custom";
