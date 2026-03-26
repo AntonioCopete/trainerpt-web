@@ -5,7 +5,6 @@ import { CalendarClock, Dumbbell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
-import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
 import type {
   RoutineAssignment,
@@ -32,29 +31,6 @@ export default function MemberRoutinesPage() {
   const [exerciseDetailOpen, setExerciseDetailOpen] = useState(false);
   const [exerciseDetail, setExerciseDetail] =
     useState<RoutineTemplateExercise | null>(null);
-
-  const renderExerciseDescription = (
-    value: string | string[] | null | undefined,
-  ) => {
-    if (!value) return null;
-    if (Array.isArray(value)) {
-      const lines = value.map((line) => line?.trim()).filter(Boolean);
-      if (lines.length === 0) return null;
-      return (
-        <ul className="mt-1 text-xs text-gray-400 [&_li]:ml-4 [&_li]:list-disc">
-          {lines.map((line, idx) => (
-            <li key={`${idx}-${line}`}>{line}</li>
-          ))}
-        </ul>
-      );
-    }
-    return (
-      <SafeHtml
-        html={value}
-        className="mt-1 text-xs text-gray-400 [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-1"
-      />
-    );
-  };
 
   const fetchRoutines = useCallback(async () => {
     setLoading(true);
@@ -170,36 +146,27 @@ export default function MemberRoutinesPage() {
                     <p className="text-sm text-gray-100">
                       {index + 1}. {item.name ?? "Ejercicio"}
                     </p>
-                    {renderExerciseDescription(item.description)}
-                    {item.instructions && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        {item.instructions}
-                      </p>
-                    )}
-                    {(item.imageUrl || item.videoUrl) && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        {item.imageUrl && (
-                          <a
-                            href={item.imageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-gray-700 px-2 py-1 text-blue-300 hover:bg-gray-800"
-                          >
-                            Ver imagen
-                          </a>
-                        )}
-                        {item.videoUrl && (
-                          <a
-                            href={item.videoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-md border border-gray-700 px-2 py-1 text-blue-300 hover:bg-gray-800"
-                          >
-                            Ver video
-                          </a>
-                        )}
-                      </div>
-                    )}
+                    {(() => {
+                      const imageCandidates = Array.isArray(item.imageUrls)
+                        ? item.imageUrls
+                        : item.imageUrl
+                          ? [item.imageUrl]
+                          : [];
+                      const previewImages = imageCandidates.slice(0, 2);
+                      if (previewImages.length === 0) return null;
+                      return (
+                        <div className="mt-2 grid max-w-xs grid-cols-2 gap-2">
+                          {previewImages.map((url, imgIdx) => (
+                            <img
+                              key={`${item.exerciseId}-${imgIdx}-${url}`}
+                              src={url}
+                              alt={item.name ?? "Ejercicio"}
+                              className="h-20 w-full rounded-md border border-gray-700 bg-gray-800 object-cover"
+                            />
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="mt-2">
                       <Button
                         type="button"
