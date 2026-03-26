@@ -40,6 +40,17 @@ export function AssignRoutineDialog({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.tagName === "INPUT") {
+          activeElement.blur();
+        }
+      }, 0);
+    }
+  }, [open]);
+
+  useEffect(() => {
     setMemberId(preselectedMemberId ?? "");
   }, [preselectedMemberId, open]);
 

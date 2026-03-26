@@ -54,9 +54,18 @@ export interface AssignRoutinePayload {
   endDate: string;
 }
 
+export interface CreateCustomRoutinePayload {
+  memberId: string;
+  name: string;
+  description: string;
+  schema: RoutineTemplateExercise[];
+  startDate: string;
+  endDate: string;
+}
+
 export interface RoutineExercise {
   id: string;
-  source: "wger" | "custom";
+  source: "wger" | "free_exercise_db" | "custom";
   externalId: number | null;
   trainerId?: string | null;
   author?: string;
@@ -81,7 +90,7 @@ export interface RoutineExercise {
 export interface RoutineTemplateExercise {
   id?: string;
   exerciseId: string;
-  source?: "wger" | "custom";
+  source: "wger" | "free_exercise_db" | "custom";
   trainerId?: string | null;
   author?: string;
   license?: {
@@ -100,7 +109,8 @@ export interface RoutineTemplateExercise {
   videoUrl?: string | null;
   imageUrls?: string[];
   videoUrls?: string[];
-  instructions?: string;
+  instructions: string;
+  trainingTitle: string;
   order: number;
 }
 

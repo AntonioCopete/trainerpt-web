@@ -149,3 +149,41 @@ body {
     @apply border border-red-500/30 shadow-inner-glow;
   }
 }
+
+/* Custom scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(55 65 81) rgb(17 24 39);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgb(17 24 39);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgb(55 65 81);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(75 85 99);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(
+    to bottom,
+    rgba(239, 68, 68, 0.6),
+    rgba(249, 115, 22, 0.6)
+  );
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgb(17 24 39);
+}
