@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  ArchiveRestore,
   CalendarRange,
+  Trash2,
   Dumbbell,
   Edit3,
   Plus,
@@ -33,6 +35,10 @@ export default function TrainerRoutinesPage() {
     useState<RoutineTemplate | null>(null);
   const [selectedTemplate, setSelectedTemplate] =
     useState<RoutineTemplate | null>(null);
+  const [archivedTemplates, setArchivedTemplates] = useState<RoutineTemplate[]>(
+    [],
+  );
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
@@ -48,6 +54,16 @@ export default function TrainerRoutinesPage() {
       );
       const data = await res.json();
       setTemplates(data.templates ?? []);
+
+      const archivedRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/archived`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+      const archivedData = await archivedRes.json().catch(() => ({}));
+      setArchivedTemplates(archivedData.templates ?? []);
     } catch {
       setTemplates([]);
       toast.error("No se pudieron cargar las rutinas");
@@ -121,6 +137,60 @@ export default function TrainerRoutinesPage() {
     await fetchTemplates();
   };
 
+  const archiveTemplate = async (templateId: string) => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/${templateId}/archive`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    if (!res.ok) {
+      toast.error("No se pudo archivar la rutina");
+      return;
+    }
+    toast.success("Rutina archivada");
+    await fetchTemplates();
+  };
+
+  const restoreTemplate = async (templateId: string) => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/${templateId}/restore`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    if (!res.ok) {
+      toast.error("No se pudo restaurar la rutina");
+      return;
+    }
+    toast.success("Rutina restaurada");
+    await fetchTemplates();
+  };
+
+  const deleteTemplatePermanently = async (templateId: string) => {
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/${templateId}/delete`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    if (!res.ok) {
+      toast.error("No se pudo eliminar definitivamente");
+      return;
+    }
+    toast.success("Rutina eliminada definitivamente");
+    await fetchTemplates();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -168,6 +238,16 @@ export default function TrainerRoutinesPage() {
           placeholder="Buscar rutina..."
           className="h-10 rounded-xl border-gray-800 bg-gray-900 pl-10 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
         />
+      </div>
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowArchived((prev) => !prev)}
+          className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+        >
+          {showArchived ? "Ocultar archivadas" : "Ver archivadas"}
+        </Button>
       </div>
 
       {loading ? (
@@ -233,6 +313,15 @@ export default function TrainerRoutinesPage() {
                   Editar
                 </Button>
                 <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void archiveTemplate(template.id)}
+                  className="gap-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+                >
+                  <ArchiveRestore className="h-3.5 w-3.5" />
+                  Archivar
+                </Button>
+                <Button
                   size="sm"
                   onClick={() => {
                     setSelectedTemplate(template);
@@ -246,6 +335,44 @@ export default function TrainerRoutinesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showArchived && (
+        <div className="space-y-2 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
+          <h2 className="text-sm font-semibold text-gray-200">
+            Rutinas archivadas
+          </h2>
+          {archivedTemplates.length === 0 ? (
+            <p className="text-xs text-gray-500">No hay rutinas archivadas.</p>
+          ) : (
+            archivedTemplates.map((template) => (
+              <div
+                key={template.id}
+                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2"
+              >
+                <p className="text-sm text-gray-200">{template.name}</p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void restoreTemplate(template.id)}
+                    className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800"
+                  >
+                    Restaurar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void deleteTemplatePermanently(template.id)}
+                    className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 

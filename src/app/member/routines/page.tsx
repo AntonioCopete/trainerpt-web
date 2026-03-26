@@ -67,6 +67,26 @@ export default function MemberRoutinesPage() {
     return history.filter((item) => item.id !== activeAssignment.id);
   }, [history, activeAssignment]);
 
+  const groupedExercises = useMemo(() => {
+    const snapshot = Array.isArray(activeAssignment?.schemaSnapshot)
+      ? activeAssignment.schemaSnapshot
+      : [];
+    const groups = new Map<string, RoutineTemplateExercise[]>();
+    snapshot.forEach((item) => {
+      const title =
+        typeof item.trainingTitle === "string" && item.trainingTitle.trim()
+          ? item.trainingTitle.trim()
+          : "Entrenamiento";
+      const current = groups.get(title) ?? [];
+      current.push(item);
+      groups.set(title, current);
+    });
+    return Array.from(groups.entries()).map(([title, exercises]) => ({
+      title,
+      exercises,
+    }));
+  }, [activeAssignment]);
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -132,59 +152,75 @@ export default function MemberRoutinesPage() {
             {formatRoutineDate(activeAssignment.endDate)}
           </div>
 
-          {Array.isArray(activeAssignment.schemaSnapshot) &&
-            activeAssignment.schemaSnapshot.length > 0 && (
-              <div className="mt-4 space-y-2 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Ejercicios
-                </p>
-                {activeAssignment.schemaSnapshot.map((item, index) => (
-                  <div
-                    key={`${activeAssignment.id}-${item.exerciseId}-${index}`}
-                    className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2"
-                  >
-                    <p className="text-sm text-gray-100">
-                      {index + 1}. {item.name ?? "Ejercicio"}
-                    </p>
-                    {(() => {
-                      const imageCandidates = Array.isArray(item.imageUrls)
-                        ? item.imageUrls
-                        : item.imageUrl
-                          ? [item.imageUrl]
-                          : [];
-                      const previewImages = imageCandidates.slice(0, 2);
-                      if (previewImages.length === 0) return null;
-                      return (
-                        <div className="mt-2 grid max-w-xs grid-cols-2 gap-2">
-                          {previewImages.map((url, imgIdx) => (
-                            <img
-                              key={`${item.exerciseId}-${imgIdx}-${url}`}
-                              src={url}
-                              alt={item.name ?? "Ejercicio"}
-                              className="h-20 w-full rounded-md border border-gray-700 bg-gray-800 object-cover"
-                            />
-                          ))}
-                        </div>
-                      );
-                    })()}
-                    <div className="mt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="border-gray-700 bg-transparent text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
-                        onClick={() => {
-                          setExerciseDetail(item);
-                          setExerciseDetailOpen(true);
-                        }}
+          {groupedExercises.length > 0 && (
+            <div className="mt-4 space-y-2 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Ejercicios
+              </p>
+              {groupedExercises.map((group, groupIdx) => (
+                <div
+                  key={`${activeAssignment.id}-group-${groupIdx}-${group.title}`}
+                  className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                >
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
+                    {group.title}
+                  </p>
+                  <div className="space-y-2">
+                    {group.exercises.map((item, index) => (
+                      <div
+                        key={`${activeAssignment.id}-${group.title}-${item.exerciseId}-${index}`}
+                        className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2"
                       >
-                        Ver detalle
-                      </Button>
-                    </div>
+                        <p className="text-sm text-gray-100">
+                          {index + 1}. {item.name ?? "Ejercicio"}
+                        </p>
+                        {item.instructions && item.instructions.trim() && (
+                          <p className="mt-1 text-xs text-orange-300">
+                            {item.instructions}
+                          </p>
+                        )}
+                        {(() => {
+                          const imageCandidates = Array.isArray(item.imageUrls)
+                            ? item.imageUrls
+                            : item.imageUrl
+                              ? [item.imageUrl]
+                              : [];
+                          const previewImages = imageCandidates.slice(0, 2);
+                          if (previewImages.length === 0) return null;
+                          return (
+                            <div className="mt-2 grid max-w-xs grid-cols-2 gap-2">
+                              {previewImages.map((url, imgIdx) => (
+                                <img
+                                  key={`${item.exerciseId}-${imgIdx}-${url}`}
+                                  src={url}
+                                  alt={item.name ?? "Ejercicio"}
+                                  className="h-20 w-full rounded-md border border-gray-700 bg-gray-800 object-cover"
+                                />
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        <div className="mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-700 bg-transparent text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+                            onClick={() => {
+                              setExerciseDetail(item);
+                              setExerciseDetailOpen(true);
+                            }}
+                          >
+                            Ver detalle
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

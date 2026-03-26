@@ -34,27 +34,21 @@ export function AssignRoutineDialog({
   const supabase = createSupabaseBrowser();
   const [members, setMembers] = useState<MemberSummary[]>([]);
   const [memberId, setMemberId] = useState(preselectedMemberId ?? "");
-  const [startDateEs, setStartDateEs] = useState("");
-  const [endDateEs, setEndDateEs] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const parseEsDateToIso = (value: string): string | null => {
-    const trimmed = value.trim();
-    const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return null;
-    const [, dd, mm, yyyy] = match;
-    const date = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
-    if (Number.isNaN(date.getTime())) return null;
-    if (
-      date.getUTCDate() !== Number(dd) ||
-      date.getUTCMonth() + 1 !== Number(mm) ||
-      date.getUTCFullYear() !== Number(yyyy)
-    ) {
-      return null;
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.tagName === "INPUT") {
+          activeElement.blur();
+        }
+      }, 0);
     }
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  }, [open]);
 
   useEffect(() => {
     setMemberId(preselectedMemberId ?? "");
@@ -99,21 +93,15 @@ export function AssignRoutineDialog({
   );
 
   const resetForm = () => {
-    setStartDateEs("");
-    setEndDateEs("");
+    setStartDate("");
+    setEndDate("");
     if (!preselectedMemberId) setMemberId("");
   };
 
   const handleSubmit = async () => {
     if (!template) return;
-    if (!memberId || !startDateEs || !endDateEs) {
+    if (!memberId || !startDate || !endDate) {
       toast.error("Completa member y rango de fechas");
-      return;
-    }
-    const startDate = parseEsDateToIso(startDateEs);
-    const endDate = parseEsDateToIso(endDateEs);
-    if (!startDate || !endDate) {
-      toast.error("Usa formato de fecha DD/MM/YYYY");
       return;
     }
 
@@ -193,22 +181,18 @@ export function AssignRoutineDialog({
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">Desde</label>
               <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/YYYY"
-                value={startDateEs}
-                onChange={(e) => setStartDateEs(e.target.value)}
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="border-gray-700 bg-gray-800 text-gray-100"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">Hasta</label>
               <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/YYYY"
-                value={endDateEs}
-                onChange={(e) => setEndDateEs(e.target.value)}
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="border-gray-700 bg-gray-800 text-gray-100"
               />
             </div>
