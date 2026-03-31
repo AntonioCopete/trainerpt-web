@@ -289,15 +289,28 @@ export default function TrainerRoutinesPage() {
                   ? `${template.schema.length} ejercicios`
                   : "Sin bloques"}
               </p>
-              {Array.isArray(template.schema) && template.schema.length > 0 && (
-                <p className="mt-1 line-clamp-1 text-xs text-gray-500">
-                  {template.schema
-                    .slice(0, 3)
-                    .map((item) => item.name)
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
+              {Array.isArray(template.schema) &&
+                template.schema.length > 0 &&
+                (() => {
+                  // Extraer nombres únicos de entrenamientos preservando el orden
+                  const trainingTitles: string[] = [];
+                  const seen = new Set<string>();
+                  for (const item of template.schema) {
+                    const title =
+                      typeof item?.trainingTitle === "string"
+                        ? item.trainingTitle.trim()
+                        : "";
+                    if (title && !seen.has(title)) {
+                      trainingTitles.push(title);
+                      seen.add(title);
+                    }
+                  }
+                  return trainingTitles.length > 0 ? (
+                    <p className="mt-1 line-clamp-1 text-xs text-gray-500">
+                      {trainingTitles.join(" · ")}
+                    </p>
+                  ) : null;
+                })()}
 
               <div className="mt-4 flex items-center gap-2">
                 <Button
