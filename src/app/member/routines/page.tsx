@@ -31,6 +31,21 @@ export default function MemberRoutinesPage() {
   const [exerciseDetailOpen, setExerciseDetailOpen] = useState(false);
   const [exerciseDetail, setExerciseDetail] =
     useState<RoutineTemplateExercise | null>(null);
+  const [expandedHistoryIds, setExpandedHistoryIds] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const toggleHistoryExpanded = (assignmentId: string) => {
+    setExpandedHistoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(assignmentId)) {
+        next.delete(assignmentId);
+      } else {
+        next.add(assignmentId);
+      }
+      return next;
+    });
+  };
 
   const fetchRoutines = useCallback(async () => {
     setLoading(true);
@@ -235,26 +250,150 @@ export default function MemberRoutinesPage() {
         ) : (
           historyWithoutActive.map((assignment) => {
             const status = assignment.computedStatus || assignment.status;
+            const isExpanded = expandedHistoryIds.has(assignment.id);
+
+            const groupedHistoryExercises = (() => {
+              const snapshot = Array.isArray(assignment.schemaSnapshot)
+                ? assignment.schemaSnapshot
+                : [];
+              const groups = new Map<string, RoutineTemplateExercise[]>();
+              snapshot.forEach((item) => {
+                const title =
+                  typeof item.trainingTitle === "string" &&
+                  item.trainingTitle.trim()
+                    ? item.trainingTitle.trim()
+                    : "Entrenamiento";
+                const current = groups.get(title) ?? [];
+                current.push(item);
+                groups.set(title, current);
+              });
+              return Array.from(groups.entries()).map(([title, exercises]) => ({
+                title,
+                exercises,
+              }));
+            })();
+
             return (
               <div
                 key={assignment.id}
-                className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3"
+                className="rounded-xl border border-gray-800 bg-gray-900/60 p-4"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-white">
-                    {assignment.template?.name ?? "Rutina"}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {formatRoutineDate(assignment.startDate)} -{" "}
-                    {formatRoutineDate(assignment.endDate)}
-                  </p>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={`border-0 ${STATUS_BADGE_CLASS[status]}`}
+                <div
+                  className="flex cursor-pointer items-center justify-between"
+                  onClick={() => toggleHistoryExpanded(assignment.id)}
                 >
-                  {ROUTINE_STATUS_LABELS[status]}
-                </Badge>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-white">
+                      {assignment.template?.name ?? "Rutina"}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {formatRoutineDate(assignment.startDate)} -{" "}
+                      {formatRoutineDate(assignment.endDate)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className={`border-0 ${STATUS_BADGE_CLASS[status]}`}
+                    >
+                      {ROUTINE_STATUS_LABELS[status]}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:bg-gray-800 hover:text-white"
+                    >
+                      {isExpanded ? "Ocultar" : "Ver detalles"}
+                    </Button>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="mt-4">
+                    {assignment.template?.description && (
+                      <p className="mb-3 text-sm text-gray-300">
+                        {assignment.template.description}
+                      </p>
+                    )}
+
+                    {groupedHistoryExercises.length > 0 && (
+                      <div className="space-y-2 rounded-xl border border-gray-800 bg-gray-900/40 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Ejercicios
+                        </p>
+                        {groupedHistoryExercises.map((group, groupIdx) => (
+                          <div
+                            key={`${assignment.id}-history-group-${groupIdx}-${group.title}`}
+                            className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                          >
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
+                              {group.title}
+                            </p>
+                            <div className="space-y-2">
+                              {group.exercises.map((item, index) => (
+                                <div
+                                  key={`${assignment.id}-history-${group.title}-${item.exerciseId}-${index}`}
+                                  className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2"
+                                >
+                                  <p className="text-sm text-gray-100">
+                                    {index + 1}. {item.name ?? "Ejercicio"}
+                                  </p>
+                                  {item.instructions &&
+                                    item.instructions.trim() && (
+                                      <p className="mt-1 text-xs text-orange-300">
+                                        {item.instructions}
+                                      </p>
+                                    )}
+                                  {(() => {
+                                    const imageCandidates = Array.isArray(
+                                      item.imageUrls,
+                                    )
+                                      ? item.imageUrls
+                                      : item.imageUrl
+                                        ? [item.imageUrl]
+                                        : [];
+                                    const previewImages = imageCandidates.slice(
+                                      0,
+                                      2,
+                                    );
+                                    if (previewImages.length === 0) return null;
+                                    return (
+                                      <div className="mt-2 grid max-w-xs grid-cols-2 gap-2">
+                                        {previewImages.map((url, imgIdx) => (
+                                          <img
+                                            key={`${item.exerciseId}-history-${imgIdx}-${url}`}
+                                            src={url}
+                                            alt={item.name ?? "Ejercicio"}
+                                            className="h-20 w-full rounded-md border border-gray-700 bg-gray-800 object-cover"
+                                          />
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
+                                  <div className="mt-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-gray-700 bg-transparent text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExerciseDetail(item);
+                                        setExerciseDetailOpen(true);
+                                      }}
+                                    >
+                                      Ver detalle
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })
