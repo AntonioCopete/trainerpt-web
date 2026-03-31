@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Plus, Search, Trash2, X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type {
   RoutineExercise,
@@ -21,6 +38,61 @@ import type {
 } from "@/src/app/lib/types/routines";
 import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
+
+interface SortableExerciseItemProps {
+  exercise: RoutineTemplateExercise;
+  onRemove: () => void;
+  uniqueId: string;
+}
+
+function SortableExerciseItem({
+  exercise,
+  onRemove,
+  uniqueId,
+}: SortableExerciseItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: uniqueId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 rounded-md border border-orange-500/20 bg-gray-900/40 px-2 py-1.5"
+    >
+      <button
+        type="button"
+        className="cursor-grab touch-none text-gray-500 hover:text-gray-300 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <p className="flex-1 text-sm text-gray-200">{exercise.name}</p>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={onRemove}
+        className="h-6 px-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+        title="Eliminar ejercicio"
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
 
 interface CustomRoutineDialogProps {
   open: boolean;
@@ -58,9 +130,6 @@ export function CustomRoutineDialog({
   >([]);
   const [trainingTitles, setTrainingTitles] = useState<string[]>([]);
   const newTrainingTitleRef = useRef<HTMLInputElement | null>(null);
-  const [exerciseToAssignId, setExerciseToAssignId] = useState<string | null>(
-    null,
-  );
   const [loadingExercises, setLoadingExercises] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -68,6 +137,11 @@ export function CustomRoutineDialog({
     useState<RoutineTemplateExercise | null>(null);
   const [baseTemplateId, setBaseTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<RoutineTemplate[]>([]);
+  const [manageExercisesDialogOpen, setManageExercisesDialogOpen] =
+    useState(false);
+  const [currentTrainingTitle, setCurrentTrainingTitle] = useState<
+    string | null
+  >(null);
 
   const visibleExerciseResults = useMemo(
     () => exerciseResults.slice(0, 100),
@@ -193,7 +267,7 @@ export function CustomRoutineDialog({
   }, [baseTemplateId, templates]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!manageExercisesDialogOpen) return;
     let cancelled = false;
 
     async function fetchExercises() {
@@ -230,11 +304,11 @@ export function CustomRoutineDialog({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, exerciseSearch]);
+  }, [manageExercisesDialogOpen, exerciseSearch]);
 
-  const addExercise = (exercise: RoutineExercise, trainingTitle: string) => {
-    if (!trainingTitle) {
-      toast.error("Selecciona un entrenamiento para añadir el ejercicio");
+  const addExercise = (exercise: RoutineExercise) => {
+    if (!currentTrainingTitle) {
+      toast.error("Error: no hay entrenamiento seleccionado");
       return;
     }
 
@@ -255,13 +329,12 @@ export function CustomRoutineDialog({
       videoUrls:
         exercise.videoUrls ?? (exercise.videoUrl ? [exercise.videoUrl] : []),
       instructions: "",
-      trainingTitle,
+      trainingTitle: currentTrainingTitle,
       order: 0,
     };
 
     setSelectedExercises((prev) => [...prev, newExercise]);
-    toast.success(`Ejercicio añadido a "${trainingTitle}"`);
-    setExerciseToAssignId(null);
+    toast.success(`Ejercicio añadido a "${currentTrainingTitle}"`);
   };
 
   const removeExercise = (index: number) => {
@@ -289,6 +362,53 @@ export function CustomRoutineDialog({
     setTrainingTitles((prev) => [...prev, normalized]);
     if (newTrainingTitleRef.current) newTrainingTitleRef.current.value = "";
   };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    setSelectedExercises((prev) => {
+      // Filtrar ejercicios del entrenamiento actual
+      const currentTrainingExercises = prev.filter(
+        (ex) => ex.trainingTitle === currentTrainingTitle,
+      );
+
+      // Encontrar índices en el subset usando los IDs
+      const oldIndex = currentTrainingExercises.findIndex(
+        (ex) => `${ex.exerciseId}-${ex.trainingTitle}` === active.id,
+      );
+      const newIndex = currentTrainingExercises.findIndex(
+        (ex) => `${ex.exerciseId}-${ex.trainingTitle}` === over.id,
+      );
+
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      // Reordenar el subset
+      const reordered = arrayMove(currentTrainingExercises, oldIndex, newIndex);
+
+      // Reconstruir el array: mantener otros entrenamientos y reemplazar el actual
+      const result = prev.filter(
+        (ex) => ex.trainingTitle !== currentTrainingTitle,
+      );
+
+      // Insertar los ejercicios reordenados en la misma posición relativa
+      const firstIndex = prev.findIndex(
+        (ex) => ex.trainingTitle === currentTrainingTitle,
+      );
+
+      result.splice(firstIndex, 0, ...reordered);
+
+      return result;
+    });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const groupedSelectedExercises = useMemo(() => {
     return trainingTitles.map((title) => ({
@@ -443,145 +563,6 @@ export function CustomRoutineDialog({
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">
-                Buscar ejercicio en biblioteca
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-                <Input
-                  value={exerciseSearch}
-                  onChange={(e) => setExerciseSearch(e.target.value)}
-                  placeholder="Ej: press banca, sentadilla..."
-                  className="border-gray-700 bg-gray-800 pl-10 text-gray-100"
-                />
-              </div>
-              <div className="max-h-80 space-y-2 overflow-auto rounded-lg border border-gray-800 bg-gray-800/30 p-2">
-                {loadingExercises ? (
-                  <p className="px-2 py-1 text-xs text-gray-500">Cargando...</p>
-                ) : exerciseResults.length === 0 ? (
-                  <p className="px-2 py-1 text-xs text-gray-500">
-                    No hay ejercicios para mostrar
-                  </p>
-                ) : (
-                  visibleExerciseResults.map((exercise) => {
-                    const alreadyAdded = selectedExercises.some(
-                      (item) => item.exerciseId === exercise.id,
-                    );
-                    return (
-                      <div key={exercise.id} className="space-y-1">
-                        <div className="flex items-center justify-between gap-2 rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm text-gray-100">
-                              {exercise.name}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                                  exercise.source === "custom"
-                                    ? "bg-emerald-500/20 text-emerald-300"
-                                    : "bg-blue-500/20 text-blue-300"
-                                }`}
-                              >
-                                {exercise.source === "custom"
-                                  ? "Tuyo"
-                                  : "Biblioteca"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-2 flex shrink-0 items-center gap-1">
-                            {exerciseToAssignId === exercise.id ? (
-                              <select
-                                autoFocus
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    addExercise(exercise, e.target.value);
-                                  }
-                                }}
-                                onBlur={() => setExerciseToAssignId(null)}
-                                className="h-7 rounded-md border border-gray-600 bg-gray-800 px-2 text-xs text-gray-100"
-                              >
-                                <option value="">Elegir...</option>
-                                {trainingTitles.map((title) => (
-                                  <option key={title} value={title}>
-                                    {title}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  if (trainingTitles.length === 0) {
-                                    toast.error(
-                                      "Crea al menos un entrenamiento antes de añadir ejercicios",
-                                    );
-                                    return;
-                                  }
-                                  setExerciseToAssignId(exercise.id);
-                                }}
-                                className={`h-7 border-gray-600 px-2 ${
-                                  alreadyAdded
-                                    ? "bg-orange-500/20 text-orange-300 hover:bg-orange-500/30"
-                                    : "bg-transparent text-gray-300 hover:bg-gray-700"
-                                }`}
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setExerciseDetail({
-                                  exerciseId: exercise.id,
-                                  name: exercise.name,
-                                  description: normalizeDescription(
-                                    exercise.description,
-                                  ),
-                                  categoryName: exercise.categoryName ?? null,
-                                  source: exercise.source,
-                                  trainerId: exercise.trainerId,
-                                  author:
-                                    exercise.author ??
-                                    (exercise.source === "custom"
-                                      ? "Tú"
-                                      : "Biblioteca"),
-                                  license: exercise.license ?? null,
-                                  imageUrl: exercise.imageUrl ?? null,
-                                  videoUrl: exercise.videoUrl ?? null,
-                                  imageUrls: exercise.imageUrls ?? [],
-                                  videoUrls: exercise.videoUrls ?? [],
-                                  instructions: "",
-                                  trainingTitle: "",
-                                  order: 0,
-                                });
-                                setDetailOpen(true);
-                              }}
-                              className="h-7 px-2 text-gray-300 hover:bg-gray-700"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                {!loadingExercises &&
-                  exerciseResults.length > visibleExerciseResults.length && (
-                    <p className="px-2 py-1 text-[11px] text-gray-500">
-                      Mostrando {visibleExerciseResults.length} de{" "}
-                      {exerciseResults.length} resultados. Usa búsqueda para
-                      refinar.
-                    </p>
-                  )}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">
                 Ejercicios de la rutina ({selectedExercises.length})
               </label>
               <div className="space-y-2">
@@ -617,9 +598,9 @@ export function CustomRoutineDialog({
                     </p>
                   )}
                 </div>
-                {selectedExercises.length === 0 ? (
+                {trainingTitles.length === 0 ? (
                   <p className="rounded-lg border border-gray-800 bg-gray-800/30 px-3 py-2 text-xs text-gray-500">
-                    Añade ejercicios desde la biblioteca
+                    Crea entrenamientos para comenzar
                   </p>
                 ) : (
                   groupedSelectedExercises.map((group) => (
@@ -627,12 +608,28 @@ export function CustomRoutineDialog({
                       key={`group-${group.title}`}
                       className="rounded-lg border border-gray-800 bg-gray-800/30 p-3"
                     >
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                        {group.title}
-                      </p>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-300">
+                          {group.title}
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentTrainingTitle(group.title);
+                            setExerciseSearch("");
+                            setManageExercisesDialogOpen(true);
+                          }}
+                          className="h-7 gap-1 border-gray-600 bg-transparent px-2 text-xs text-gray-300 hover:bg-gray-700"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Gestionar ejercicios
+                        </Button>
+                      </div>
                       {group.exercises.length === 0 ? (
                         <p className="text-xs text-gray-500">
-                          Sin ejercicios en este entrenamiento
+                          Sin ejercicios. Usa el botón para añadir.
                         </p>
                       ) : (
                         <div className="space-y-2">
@@ -724,6 +721,213 @@ export function CustomRoutineDialog({
               className="bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
             >
               {saving ? "Creando..." : "Crear y asignar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={manageExercisesDialogOpen}
+        onOpenChange={setManageExercisesDialogOpen}
+      >
+        <DialogContent className="max-h-[90vh] overflow-auto border-gray-800 bg-gray-900 p-5 text-white sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Gestionar ejercicios</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Añade ejercicios a{" "}
+              <span className="font-semibold text-orange-300">
+                {currentTrainingTitle}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Ejercicios actuales del entrenamiento */}
+            <div className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-semibold uppercase tracking-wide text-orange-300">
+                  Ejercicios en {currentTrainingTitle}
+                </label>
+                <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[11px] font-semibold text-orange-300">
+                  {
+                    selectedExercises.filter(
+                      (ex) => ex.trainingTitle === currentTrainingTitle,
+                    ).length
+                  }{" "}
+                  ejercicio(s)
+                </span>
+              </div>
+              {selectedExercises.filter(
+                (ex) => ex.trainingTitle === currentTrainingTitle,
+              ).length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  Aún no hay ejercicios. Busca y añade desde la biblioteca.
+                </p>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={selectedExercises
+                      .filter((ex) => ex.trainingTitle === currentTrainingTitle)
+                      .map((ex) => `${ex.exerciseId}-${ex.trainingTitle}`)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-1.5">
+                      {selectedExercises
+                        .map((ex, originalIndex) => ({
+                          ...ex,
+                          originalIndex,
+                        }))
+                        .filter(
+                          (ex) => ex.trainingTitle === currentTrainingTitle,
+                        )
+                        .map((ex, idx) => {
+                          const uniqueId = `${ex.exerciseId}-${ex.trainingTitle}`;
+                          return (
+                            <SortableExerciseItem
+                              key={uniqueId}
+                              exercise={ex}
+                              uniqueId={uniqueId}
+                              onRemove={() => removeExercise(ex.originalIndex)}
+                            />
+                          );
+                        })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400">
+                Buscar ejercicio en biblioteca
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                <Input
+                  value={exerciseSearch}
+                  onChange={(e) => setExerciseSearch(e.target.value)}
+                  placeholder="Ej: press banca, sentadilla..."
+                  className="border-gray-700 bg-gray-800 pl-10 text-gray-100"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-96 space-y-2 overflow-auto rounded-lg border border-gray-800 bg-gray-800/30 p-2">
+              {loadingExercises ? (
+                <p className="px-2 py-1 text-xs text-gray-500">Cargando...</p>
+              ) : exerciseResults.length === 0 ? (
+                <p className="px-2 py-1 text-xs text-gray-500">
+                  No hay ejercicios para mostrar
+                </p>
+              ) : (
+                visibleExerciseResults.map((exercise) => {
+                  const alreadyAdded = selectedExercises.some(
+                    (item) =>
+                      item.exerciseId === exercise.id &&
+                      item.trainingTitle === currentTrainingTitle,
+                  );
+                  return (
+                    <div key={exercise.id} className="space-y-1">
+                      <div className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/60 px-2 py-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm text-gray-100">
+                            {exercise.name}
+                          </p>
+                          <span
+                            className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                              exercise.source === "custom"
+                                ? "bg-emerald-500/20 text-emerald-300"
+                                : "bg-blue-500/20 text-blue-300"
+                            }`}
+                          >
+                            {exercise.source === "custom"
+                              ? "Tuyo"
+                              : "Biblioteca"}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => addExercise(exercise)}
+                            disabled={alreadyAdded}
+                            className={`h-7 gap-1 border-gray-600 px-2 ${
+                              alreadyAdded
+                                ? "cursor-not-allowed bg-gray-700 text-gray-500"
+                                : "bg-transparent text-gray-300 hover:bg-gray-700"
+                            }`}
+                            title={
+                              alreadyAdded ? "Ya añadido" : "Añadir ejercicio"
+                            }
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setExerciseDetail({
+                                exerciseId: exercise.id,
+                                name: exercise.name,
+                                description: normalizeDescription(
+                                  exercise.description,
+                                ),
+                                categoryName: exercise.categoryName ?? null,
+                                source: exercise.source,
+                                trainerId: exercise.trainerId,
+                                author:
+                                  exercise.author ??
+                                  (exercise.source === "custom"
+                                    ? "Tú"
+                                    : "Biblioteca"),
+                                license: exercise.license ?? null,
+                                imageUrl: exercise.imageUrl ?? null,
+                                videoUrl: exercise.videoUrl ?? null,
+                                imageUrls: exercise.imageUrls ?? [],
+                                videoUrls: exercise.videoUrls ?? [],
+                                instructions: "",
+                                trainingTitle: "",
+                                order: 0,
+                              });
+                              setDetailOpen(true);
+                            }}
+                            className="h-7 px-1.5 text-gray-300 hover:bg-gray-700"
+                            title="Ver detalle"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              {!loadingExercises &&
+                exerciseResults.length > visibleExerciseResults.length && (
+                  <p className="px-2 py-1 text-[11px] text-gray-500">
+                    Mostrando {visibleExerciseResults.length} de{" "}
+                    {exerciseResults.length} resultados. Usa búsqueda para
+                    refinar.
+                  </p>
+                )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setManageExercisesDialogOpen(false);
+                setCurrentTrainingTitle(null);
+              }}
+              className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+            >
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>
