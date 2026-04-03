@@ -101,7 +101,7 @@ export default function BillingPage() {
 
       if (res.ok) {
         const { url } = await res.json();
-        window.location.href = url;
+        window.open(url, "_blank", "noopener,noreferrer");
       }
     } catch (error) {
       console.error("Error opening portal:", error);
@@ -153,15 +153,40 @@ export default function BillingPage() {
                       Plan {currentPlanInfo.name}
                     </h2>
                     {subscription.plan !== SubscriptionPlan.FREE && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium">
-                        <Sparkles className="h-3 w-3" />
-                        Activo
-                      </span>
+                      <>
+                        {subscription.status === "CANCELED" ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm font-medium">
+                            <AlertCircle className="h-3 w-3" />
+                            Cancelado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium">
+                            <Sparkles className="h-3 w-3" />
+                            Activo
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                   <p className="text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                     {currentPlanInfo.price}
                   </p>
+                  {subscription.status === "CANCELED" &&
+                    subscription.endsAt && (
+                      <p className="text-sm text-yellow-400 mt-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" />
+                        Tu suscripción expira el{" "}
+                        {new Date(subscription.endsAt).toLocaleDateString(
+                          "es-ES",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            timeZone: "UTC", // Always display in UTC to match Stripe
+                          },
+                        )}
+                      </p>
+                    )}
                 </div>
                 {subscription.plan !== SubscriptionPlan.FREE && (
                   <Button
@@ -254,9 +279,19 @@ export default function BillingPage() {
                   transition={{ delay: index * 0.1 }}
                   className="relative group"
                 >
+                  {/* Popular Badge - outside card to avoid clipping */}
+                  {planInfo.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-semibold shadow-lg">
+                        <Sparkles className="h-3 w-3" />
+                        Popular
+                      </span>
+                    </div>
+                  )}
+
                   {/* Card */}
                   <div
-                    className={`relative flex flex-col h-full overflow-hidden rounded-2xl border transition-all duration-300 ${
+                    className={`relative flex flex-col h-full rounded-2xl border transition-all duration-300 ${
                       planInfo.popular
                         ? "border-red-500/50 bg-gradient-to-br from-gray-900 to-red-950/30 shadow-lg shadow-red-500/20"
                         : "border-gray-800 bg-gradient-to-br from-gray-900 to-gray-950"
@@ -266,15 +301,6 @@ export default function BillingPage() {
                         : "hover:border-gray-700"
                     }`}
                   >
-                    {planInfo.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-semibold shadow-lg">
-                          <Sparkles className="h-3 w-3" />
-                          Popular
-                        </span>
-                      </div>
-                    )}
-
                     {/* Header */}
                     <div className="p-6 pb-4">
                       <h3 className="text-xl font-bold text-white mb-1">
