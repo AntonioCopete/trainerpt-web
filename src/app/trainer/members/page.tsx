@@ -9,14 +9,38 @@ import { Input } from "@/components/ui/input";
 import type { MemberSummary } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 import { InviteClientDialog } from "../../components/InviteClientDialog";
+import { SubscriptionLimitBanner } from "../../components/SubscriptionLimitBanner";
+import { SubscriptionWithUsage } from "../../lib/types/subscription";
 
 export default function TrainerClientsPage() {
   const router = useRouter();
   const [members, setMembers] = useState<MemberSummary[]>([]);
+  const [subscription, setSubscription] =
+    useState<SubscriptionWithUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const supabase = createSupabaseBrowser();
+
+  const fetchSubscription = async () => {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/subscriptions/me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    }
+  };
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -40,6 +64,7 @@ export default function TrainerClientsPage() {
   }, []);
 
   useEffect(() => {
+    fetchSubscription();
     fetchMembers();
   }, [fetchMembers]);
 
@@ -49,18 +74,33 @@ export default function TrainerClientsPage() {
       m.email?.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const isAtLimit =
+    subscription && subscription.clientLimit
+      ? subscription.clientCount >= subscription.clientLimit
+      : false;
+
   return (
     <div className="space-y-6">
+      {/* Subscription Limit Banner */}
+      <SubscriptionLimitBanner />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Clientes</h1>
           <p className="mt-1 text-sm text-gray-400">
             Gestiona los clientes vinculados a tu cuenta
+            {subscription && subscription.clientLimit && (
+              <span className="ml-2 text-gray-500">
+                ({subscription.clientCount}/{subscription.clientLimit})
+              </span>
+            )}
           </p>
         </div>
         <Button
           onClick={() => setInviteDialogOpen(true)}
-          className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20"
+          disabled={isAtLimit}
+          className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={isAtLimit ? "Has alcanzado el límite de clientes" : ""}
         >
           <UserPlus className="h-4 w-4" />
           Invitar cliente
