@@ -85,6 +85,11 @@ export interface RoutineExercise {
   videoUrl?: string | null;
   imageUrls?: string[];
   videoUrls?: string[];
+  muscles?: string[] | { name: string }[] | null;
+  musclesSecondary?: string[] | { name: string }[] | null;
+  /** Etiquetas listas para UI (backend); preferir sobre muscles crudos */
+  muscleLabelsPrimary?: string[];
+  muscleLabelsSecondary?: string[];
 }
 
 export interface RoutineTemplateExercise {
@@ -109,6 +114,8 @@ export interface RoutineTemplateExercise {
   videoUrl?: string | null;
   imageUrls?: string[];
   videoUrls?: string[];
+  muscles?: string[] | { name: string }[] | null;
+  musclesSecondary?: string[] | { name: string }[] | null;
   instructions: string;
   trainingTitle: string;
   order: number;
