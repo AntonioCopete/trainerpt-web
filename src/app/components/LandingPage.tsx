@@ -209,14 +209,14 @@ export function LandingPage() {
     {
       id: "routines",
       title: "RUTINAS",
-      subtitle: "Creador de Rutinas Inteligente",
+      subtitle: "Crea Rutinas en Minutos, No en Horas",
       description:
-        "Diseña entrenamientos personalizados con nuestro constructor visual drag & drop. IA integrada para análisis automático y recomendaciones.",
+        "Deja de perder tiempo en Excel. Diseña entrenamientos profesionales con nuestro constructor visual, accede a +800 ejercicios verificados y reutiliza tus mejores plantillas.",
       bulletPoints: [
-        "Constructor visual con drag & drop revolucionario",
-        "Biblioteca con más de 500 ejercicios verificados",
-        "Análisis inteligente con IA y métricas avanzadas",
-        "Sistema colaborativo único en el mercado",
+        "Constructor intuitivo: arrastra, suelta, listo",
+        "+800 ejercicios verificados (no tendrás que buscar en Google)",
+        "Guarda plantillas y úsalas con cualquier cliente",
+        "Asigna por semanas, meses o el período que necesites",
       ],
       icon: <Dumbbell className="h-8 w-8" />,
       gradient: "from-red-500 to-orange-500",
@@ -225,45 +225,46 @@ export function LandingPage() {
     {
       id: "forms",
       title: "FORMULARIOS",
-      subtitle: "Formularios Automatizados",
+      subtitle: "Deja de Perseguir a tus Clientes por WhatsApp",
       description:
-        "Olvídate de perseguir a tus clientes. Crea check-ins automáticos y formularios personalizados que se envían solos.",
+        "Crea formularios personalizados, envíalos a tus clientes y recibe sus respuestas organizadas. Olvídate de capturas de pantalla perdidas en el chat.",
       bulletPoints: [
-        "Check-ins automáticos sin perseguir clientes",
-        "Formularios personalizados por tipo de cliente",
-        "Automatización completa de seguimiento",
-        "Integración total con perfiles de cliente",
+        "Check-ins personalizados para cada objetivo",
+        "Respuestas organizadas (adiós capturas perdidas)",
+        "Historial completo: ve la evolución de un vistazo",
+        "Crea una vez, reutiliza siempre",
       ],
       icon: <FileText className="h-8 w-8" />,
       gradient: "from-blue-500 to-cyan-500",
       image: "/images/form-automation.png",
     },
     {
-      id: "tracking",
-      title: "PROGRESO",
-      subtitle: "Seguimiento Avanzado",
+      id: "clients",
+      title: "CLIENTES",
+      subtitle: "Todos tus Clientes en un Solo Lugar",
       description:
-        "Visualización de progreso en tiempo real con gráficos interactivos, comparativas y análisis predictivo.",
+        "Gestiona tu cartera completa desde una plataforma. Invita nuevos clientes con un link, organiza sus perfiles y escala tu negocio sin caos.",
       bulletPoints: [
-        "Gráficas automáticas de evolución completa",
-        "Comparativas visuales entre períodos",
-        "Análisis predictivo con machine learning",
-        "Gamificación para aumentar adherencia",
+        "Invita clientes con un link (nada de copiar Excel)",
+        "Perfiles organizados con toda su info y historial",
+        "Ve de un vistazo quién necesita seguimiento",
+        "Crece según tu plan: de 3 a clientes ilimitados",
       ],
-      icon: <TrendingUp className="h-8 w-8" />,
+      icon: <Users className="h-8 w-8" />,
       gradient: "from-green-500 to-emerald-500",
       image: "/images/progress.png",
     },
     {
       id: "web",
       title: "100% WEB",
-      subtitle: "Tecnología Avanzada",
-      description: "Todo en un solo lugar. Sin necesidad de instalar apps.",
+      subtitle: "Accede Desde Donde Estés, Cuando Quieras",
+      description:
+        "En el gym, en casa, desde el móvil o el ordenador. Sin instalaciones, sin actualizaciones, sin complicaciones. Todo sincronizado automáticamente.",
       bulletPoints: [
-        "Todo en un solo lugar",
-        "Sin necesidad de instalar apps",
-        "Sincronización automática en tiempo real",
-        "Tecnología de vanguardia",
+        "Abre tu navegador y empieza (móvil o PC)",
+        "Cero instalaciones, cero actualizaciones manuales",
+        "Sincronización instantánea entre dispositivos",
+        "Tu trabajo siempre disponible, nunca se pierde",
       ],
       icon: <Globe className="h-8 w-8" />,
       gradient: "from-indigo-500 to-blue-500",
@@ -272,34 +273,36 @@ export function LandingPage() {
     {
       id: "pagos",
       title: "PAGOS",
-      subtitle: "Pagos Automatizados",
+      subtitle: "Cobra sin Perseguir (Próximamente)",
       description:
-        "Olvídate de perseguir a tus clientes. Automatiza cobros y evita impagos con control total.",
+        "Automatiza cobros recurrentes, reduce impagos y controla el estado de cada cliente. Ya no tendrás que recordar quién debe qué.",
       bulletPoints: [
-        "Cobros recurrentes automatizados",
-        "Recordatorios inteligentes",
-        "Control de estado de pagos",
-        "Integración con perfiles de cliente",
+        "Cobros automáticos mes a mes (sin recordatorios)",
+        "Ve de un vistazo quién ha pagado y quién no",
+        "Reduce impagos con recordatorios inteligentes",
+        "Integrado con Stripe: seguro y profesional",
       ],
       icon: <CreditCard className="h-8 w-8" />,
       gradient: "from-purple-500 to-pink-500",
       image: "/images/payments.png",
+      comingSoon: true,
     },
     {
       id: "dietas",
       title: "DIETAS",
-      subtitle: "Dietas Automatizadas",
+      subtitle: "Planificación Nutricional Simplificada (Próximamente)",
       description:
-        "Crea planes nutricionales ajustados por objetivo con automatización y control total.",
+        "Crea planes de alimentación personalizados sin complicarte. Ajusta según objetivos, preferencias y evolución de cada cliente.",
       bulletPoints: [
-        "Planes por objetivo y preferencias",
-        "Ajustes rápidos por evolución",
-        "Seguimiento con métricas",
-        "Automatización de entregas",
+        "Planes nutricionales adaptados a cada objetivo",
+        "Biblioteca de alimentos y comidas predefinidas",
+        "Ajusta macros y calorías con un click",
+        "Plantillas reutilizables para casos similares",
       ],
       icon: <Utensils className="h-8 w-8" />,
-      gradient: "from-purple-500 to-pink-500",
+      gradient: "from-orange-500 to-red-500",
       image: "/images/nutrition-planning.jpg",
+      comingSoon: true,
     },
   ];
 
@@ -312,10 +315,9 @@ export function LandingPage() {
       description: "Para empezar sin excusas",
       features: [
         "Hasta 3 clientes activos",
-        "Constructor visual básico",
-        "Plantillas predefinidas",
-        "Soporte básico",
-        "Perfil profesional público",
+        "Formularios ilimitados",
+        "Rutinas de ejercicio",
+        "Soporte por email",
       ],
       cta: "Empieza gratis",
       highlighted: false,
@@ -324,50 +326,49 @@ export function LandingPage() {
     {
       icon: <Star className="h-10 w-10" />,
       title: "STARTER",
-      price: "39€",
+      price: "29€",
       period: "/ mes",
       description: "Ideal para escalar sin complicaciones",
       features: [
         "Hasta 15 clientes activos",
-        "Constructor visual completo",
-        "Análisis básico con IA",
         "Formularios ilimitados",
-        "Estadísticas de negocio",
+        "Rutinas de ejercicio",
+        "Soporte prioritario",
       ],
       cta: "Llega al siguiente nivel",
-      highlighted: false,
-      gradient: "from-blue-500 to-blue-600",
+      highlighted: true,
+      badge: "Más popular",
+      gradient: "from-red-500 to-orange-500",
     },
     {
       icon: <Crown className="h-10 w-10" />,
       title: "PRO",
-      price: "59€",
+      price: "49€",
       period: "/ mes",
       description: "Para entrenadores que quieren crecer de verdad",
       features: [
         "Hasta 40 clientes activos",
-        "IA avanzada y análisis predictivo",
-        "Sistema colaborativo completo",
-        "Marketplace premium",
-        "Soporte prioritario 24/7",
+        "Formularios ilimitados",
+        "Rutinas de ejercicio",
+        "Soporte prioritario",
       ],
       cta: "Listo para escalar",
-      highlighted: true,
-      badge: "Más vendido",
+      highlighted: false,
       gradient: "from-red-500 to-red-600",
     },
     {
       icon: <Diamond className="h-10 w-10" />,
       title: "ELITE",
-      price: "89€",
+      price: "99€",
       period: "/ mes",
       description: "Para pros con volumen o estudios",
       features: [
         "Clientes ilimitados",
-        "White-label personalizado",
-        "API completa para integraciones",
-        "Consultoría estratégica incluida",
-        "Funciones experimentales",
+        "Formularios ilimitados",
+        "Rutinas de ejercicio",
+        "Soporte prioritario",
+        // "Análisis avanzados",
+        // "Marca personalizada (próximamente)",
       ],
       cta: "Crece sin límites",
       highlighted: false,
@@ -503,7 +504,7 @@ export function LandingPage() {
           </motion.div>
 
           {/* Stats */}
-          <motion.div
+          {/* <motion.div
             className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={reduceMotion ? undefined : { opacity: 1 }}
@@ -530,7 +531,7 @@ export function LandingPage() {
                 <div className="text-gray-400">{stat.label}</div>
               </motion.div>
             ))}
-          </motion.div>
+          </motion.div> */}
         </motion.div>
 
         {/* Parallax Elements (desactivado si reduce motion) */}
@@ -625,6 +626,11 @@ export function LandingPage() {
                 <div className="flex flex-col items-center gap-2">
                   {feature.icon}
                   <span className="text-sm font-semibold">{feature.title}</span>
+                  {feature.comingSoon && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                      Pronto
+                    </span>
+                  )}
                 </div>
               </motion.button>
             ))}
@@ -646,8 +652,13 @@ export function LandingPage() {
                   >
                     {features[activeFeature].icon}
                   </div>
-                  <h3 className="text-3xl font-bold mb-4">
+                  <h3 className="text-3xl font-bold mb-4 flex items-center gap-3">
                     {features[activeFeature].subtitle}
+                    {features[activeFeature].comingSoon && (
+                      <span className="text-sm px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 font-medium">
+                        Próximamente
+                      </span>
+                    )}
                   </h3>
                   <p className="text-gray-300 mb-8 text-lg">
                     {features[activeFeature].description}
@@ -819,25 +830,25 @@ export function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                title: "Gestión Profesional",
+                title: "Gestión Centralizada",
                 description:
-                  "Organiza clientes, pagos, sesiones y seguimiento desde un único panel de control intuitivo.",
+                  "Todos tus clientes, rutinas y formularios en un solo lugar. Sin Excel, sin notas perdidas, sin caos.",
                 icon: <Users className="h-10 w-10" />,
                 gradient: "from-red-500 to-orange-500",
               },
               {
-                title: "Análisis Avanzado",
+                title: "Plantillas Reutilizables",
                 description:
-                  "Métricas detalladas, KPIs personalizables y reportes automáticos para optimizar tu negocio.",
-                icon: <TrendingUp className="h-10 w-10" />,
+                  "Crea una vez, reutiliza siempre. Guarda tus mejores rutinas y formularios como plantillas y ahorra horas cada semana.",
+                icon: <FileText className="h-10 w-10" />,
                 gradient: "from-blue-500 to-cyan-500",
               },
               {
-                title: "Imagen de Marca",
+                title: "Escalable por Diseño",
                 description:
-                  "Personaliza la experiencia de tus clientes con tu logo, colores y estilo propio.",
-                icon: <Crown className="h-10 w-10" />,
-                gradient: "from-purple-500 to-pink-500",
+                  "Empieza con 3 clientes gratis. Cuando crezcas, actualiza a 15, 40 o ilimitados. Tu herramienta crece contigo.",
+                icon: <TrendingUp className="h-10 w-10" />,
+                gradient: "from-green-500 to-emerald-500",
               },
             ].map((tool, index) => (
               <motion.div
