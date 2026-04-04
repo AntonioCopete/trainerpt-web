@@ -11,7 +11,6 @@ import {
   Plus,
   Search,
   Send,
-  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type { RoutineTemplate } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
-import { CustomExerciseDialog } from "@/src/app/components/routines/CustomExerciseDialog";
 import { RoutineTemplateDialog } from "@/src/app/components/routines/RoutineTemplateDialog";
+import { TrainerExerciseLibraryDialog } from "@/src/app/components/routines/TrainerExerciseLibraryDialog";
 
 export default function TrainerRoutinesPage() {
   const supabase = createSupabaseBrowser();
@@ -29,8 +28,7 @@ export default function TrainerRoutinesPage() {
   const [search, setSearch] = useState("");
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [customExerciseDialogOpen, setCustomExerciseDialogOpen] =
-    useState(false);
+  const [exerciseLibraryOpen, setExerciseLibraryOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] =
     useState<RoutineTemplate | null>(null);
   const [selectedTemplate, setSelectedTemplate] =
@@ -211,11 +209,11 @@ export default function TrainerRoutinesPage() {
           </Link>
           <Button
             variant="outline"
-            onClick={() => setCustomExerciseDialogOpen(true)}
+            onClick={() => setExerciseLibraryOpen(true)}
             className="gap-2 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
           >
-            <Wrench className="h-4 w-4" />
-            Nuevo ejercicio
+            <Dumbbell className="h-4 w-4" />
+            Biblioteca de ejercicios
           </Button>
           <Button
             onClick={() => {
@@ -408,9 +406,9 @@ export default function TrainerRoutinesPage() {
         template={selectedTemplate}
         onAssigned={fetchTemplates}
       />
-      <CustomExerciseDialog
-        open={customExerciseDialogOpen}
-        onOpenChange={setCustomExerciseDialogOpen}
+      <TrainerExerciseLibraryDialog
+        open={exerciseLibraryOpen}
+        onOpenChange={setExerciseLibraryOpen}
       />
     </div>
   );

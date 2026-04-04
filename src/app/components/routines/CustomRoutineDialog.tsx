@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -41,12 +42,14 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type {
+  CustomExerciseForEdit,
   RoutineExercise,
   RoutineTemplate,
   RoutineTemplateExercise,
 } from "@/src/app/lib/types/routines";
 import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
+import { CustomExerciseDialog } from "@/src/app/components/routines/CustomExerciseDialog";
 
 interface SortableExerciseItemProps {
   exercise: RoutineTemplateExercise;
@@ -327,6 +330,39 @@ export function CustomRoutineDialog({
     return null;
   };
 
+  const getMuscleNames = (
+    muscles: string[] | { name: string }[] | null | undefined,
+  ): string[] => {
+    if (!muscles || !Array.isArray(muscles)) return [];
+    return muscles
+      .map((muscle) => {
+        if (typeof muscle === "string") return muscle;
+        if (muscle && typeof muscle === "object" && "name" in muscle) {
+          return muscle.name;
+        }
+        return null;
+      })
+      .filter((name): name is string => Boolean(name));
+  };
+
+  const formatMuscleLabel = (s: string) =>
+    s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+  const normalizeExerciseFromApi = (exercise: any): RoutineExercise => ({
+    ...exercise,
+    name: exercise?.nameEs ?? exercise?.name ?? "Ejercicio",
+    description:
+      normalizeDescription(exercise?.descriptionEs) ??
+      normalizeDescription(exercise?.description),
+    categoryName: exercise?.categoryNameEs ?? exercise?.categoryName ?? null,
+    muscleLabelsPrimary: Array.isArray(exercise?.muscleLabelsPrimary)
+      ? exercise.muscleLabelsPrimary
+      : undefined,
+    muscleLabelsSecondary: Array.isArray(exercise?.muscleLabelsSecondary)
+      ? exercise.muscleLabelsSecondary
+      : undefined,
+  });
+
   const supabase = createSupabaseBrowser();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -357,6 +393,11 @@ export function CustomRoutineDialog({
   const [editingTrainingValue, setEditingTrainingValue] = useState("");
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [customExerciseEditorOpen, setCustomExerciseEditorOpen] =
+    useState(false);
+  const [editingCustomExerciseId, setEditingCustomExerciseId] = useState<
+    string | null
+  >(null);
   const initialStateRef = useRef<{
     name: string;
     description: string;
@@ -377,6 +418,29 @@ export function CustomRoutineDialog({
     () => exerciseResults.slice(0, 100),
     [exerciseResults],
   );
+
+  const applyUpdatedCustomExercise = (updated: CustomExerciseForEdit) => {
+    setSelectedExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.exerciseId !== updated.id) return ex;
+        const lines = updated.description
+          .split(/\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0);
+        return {
+          ...ex,
+          name: updated.name,
+          categoryName: updated.categoryName,
+          description: lines.length > 0 ? lines : ex.description,
+          imageUrl: updated.imageUrl,
+          videoUrl: updated.videoUrl,
+          imageUrls: updated.imageUrl ? [updated.imageUrl] : [],
+          videoUrls: updated.videoUrl ? [updated.videoUrl] : [],
+        };
+      }),
+    );
+    setHasUnsavedChanges(true);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -571,7 +635,10 @@ export function CustomRoutineDialog({
         });
         const data = await res.json();
         if (!cancelled) {
-          setExerciseResults(data.exercises ?? []);
+          const list = Array.isArray(data.exercises)
+            ? data.exercises.map(normalizeExerciseFromApi)
+            : [];
+          setExerciseResults(list);
         }
       } catch {
         if (!cancelled) {
@@ -1132,7 +1199,7 @@ export function CustomRoutineDialog({
                 <Input
                   value={exerciseSearch}
                   onChange={(e) => setExerciseSearch(e.target.value)}
-                  placeholder="Ej: press banca, sentadilla..."
+                  placeholder="Buscar por nombre o músculo…"
                   className="border-gray-700 bg-gray-800 pl-10 text-gray-100"
                 />
               </div>
@@ -1152,24 +1219,56 @@ export function CustomRoutineDialog({
                       item.exerciseId === exercise.id &&
                       item.trainingTitle === currentTrainingTitle,
                   );
+                  const primaryMuscles = (
+                    exercise.muscleLabelsPrimary?.length
+                      ? exercise.muscleLabelsPrimary
+                      : getMuscleNames(exercise.muscles)
+                  ).slice(0, 4);
+                  const secondaryMuscles = (
+                    exercise.muscleLabelsSecondary?.length
+                      ? exercise.muscleLabelsSecondary
+                      : getMuscleNames(exercise.musclesSecondary)
+                  ).slice(0, 3);
                   return (
                     <div key={exercise.id} className="space-y-1">
-                      <div className="flex items-center gap-2 rounded-md border border-gray-700 bg-gray-900/60 px-2 py-2">
+                      <div className="flex items-center gap-3 rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2.5">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-gray-100">
-                            {exercise.name}
-                          </p>
-                          <span
-                            className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                              exercise.source === "custom"
-                                ? "bg-emerald-500/20 text-emerald-300"
-                                : "bg-blue-500/20 text-blue-300"
-                            }`}
-                          >
-                            {exercise.source === "custom"
-                              ? "Tuyo"
-                              : "Biblioteca"}
-                          </span>
+                          <div className="flex min-w-0 w-full items-center gap-2">
+                            <p className="min-w-0 shrink truncate text-base font-semibold leading-snug text-white">
+                              {exercise.name}
+                            </p>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                                exercise.source === "custom"
+                                  ? "bg-emerald-500/25 text-emerald-200"
+                                  : "bg-blue-500/25 text-blue-200"
+                              }`}
+                            >
+                              {exercise.source === "custom"
+                                ? "Tuyo"
+                                : "Biblioteca"}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            {primaryMuscles.map((muscle, idx) => (
+                              <Badge
+                                key={`p-${idx}`}
+                                variant="outline"
+                                className="h-6 rounded-md border-red-400/50 bg-red-500/20 px-2.5 py-0 text-xs font-bold normal-case text-red-100 shadow-none"
+                              >
+                                {formatMuscleLabel(muscle)}
+                              </Badge>
+                            ))}
+                            {secondaryMuscles.map((muscle, idx) => (
+                              <Badge
+                                key={`s-${idx}`}
+                                variant="outline"
+                                className="h-6 rounded-md border-orange-400/50 bg-orange-500/20 px-2.5 py-0 text-xs font-bold normal-case text-orange-100 shadow-none"
+                              >
+                                {formatMuscleLabel(muscle)}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
                           <Button
@@ -1259,6 +1358,25 @@ export function CustomRoutineDialog({
         open={detailOpen}
         onOpenChange={setDetailOpen}
         exercise={exerciseDetail}
+        onEditCustom={
+          exerciseDetail?.source === "custom"
+            ? () => {
+                if (!exerciseDetail) return;
+                setEditingCustomExerciseId(exerciseDetail.exerciseId);
+                setDetailOpen(false);
+                setCustomExerciseEditorOpen(true);
+              }
+            : undefined
+        }
+      />
+      <CustomExerciseDialog
+        open={customExerciseEditorOpen}
+        onOpenChange={(next) => {
+          if (!next) setEditingCustomExerciseId(null);
+          setCustomExerciseEditorOpen(next);
+        }}
+        editingExerciseId={editingCustomExerciseId}
+        onSaved={applyUpdatedCustomExercise}
       />
       <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
         <DialogContent className="border-gray-800 bg-gray-900 text-white sm:max-w-md">

@@ -85,6 +85,11 @@ export interface RoutineExercise {
   videoUrl?: string | null;
   imageUrls?: string[];
   videoUrls?: string[];
+  muscles?: string[] | { name: string }[] | null;
+  musclesSecondary?: string[] | { name: string }[] | null;
+  /** Etiquetas listas para UI (backend); preferir sobre muscles crudos */
+  muscleLabelsPrimary?: string[];
+  muscleLabelsSecondary?: string[];
 }
 
 export interface RoutineTemplateExercise {
@@ -109,9 +114,17 @@ export interface RoutineTemplateExercise {
   videoUrl?: string | null;
   imageUrls?: string[];
   videoUrls?: string[];
+  muscles?: string[] | { name: string }[] | null;
+  musclesSecondary?: string[] | { name: string }[] | null;
   instructions: string;
   trainingTitle: string;
   order: number;
+}
+
+export interface MuscleCatalogItem {
+  id: string;
+  name: string;
+  nameEs: string;
 }
 
 export interface CreateCustomExercisePayload {
@@ -120,6 +133,20 @@ export interface CreateCustomExercisePayload {
   categoryName?: string;
   imageUrl?: string;
   videoUrl?: string;
+  primaryMuscleIds?: string[];
+  secondaryMuscleIds?: string[];
+}
+
+/** Respuesta de GET/PATCH ejercicio propio para el formulario de edición */
+export interface CustomExerciseForEdit {
+  id: string;
+  name: string;
+  categoryName: string | null;
+  description: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  primaryMuscleId: string | null;
+  secondaryMuscleIds: string[];
 }
 
 export const ROUTINE_STATUS_LABELS: Record<RoutineAssignmentStatus, string> = {
