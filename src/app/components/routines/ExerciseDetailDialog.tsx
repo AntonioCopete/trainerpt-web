@@ -3,9 +3,11 @@
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { RoutineTemplateExercise } from "@/src/app/lib/types/routines";
 import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 
@@ -13,12 +15,15 @@ interface ExerciseDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise: RoutineTemplateExercise | null;
+  /** Ejercicios propios: abre el flujo de edición (p. ej. vídeo, descripción) */
+  onEditCustom?: () => void;
 }
 
 export function ExerciseDetailDialog({
   open,
   onOpenChange,
   exercise,
+  onEditCustom,
 }: ExerciseDetailDialogProps) {
   if (!exercise) return null;
 
@@ -152,6 +157,20 @@ export function ExerciseDetailDialog({
             </div>
           ) : null}
         </div>
+        {exercise.source === "custom" && onEditCustom ? (
+          <DialogFooter className="border-t border-gray-800 pt-4 sm:justify-start">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-orange-500/40 bg-orange-500/10 text-orange-200 hover:bg-orange-500/20 hover:text-white"
+              onClick={() => {
+                onEditCustom();
+              }}
+            >
+              Editar ejercicio
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

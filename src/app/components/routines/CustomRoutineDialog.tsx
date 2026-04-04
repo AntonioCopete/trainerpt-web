@@ -42,12 +42,14 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type {
+  CustomExerciseForEdit,
   RoutineExercise,
   RoutineTemplate,
   RoutineTemplateExercise,
 } from "@/src/app/lib/types/routines";
 import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
+import { CustomExerciseDialog } from "@/src/app/components/routines/CustomExerciseDialog";
 
 interface SortableExerciseItemProps {
   exercise: RoutineTemplateExercise;
@@ -391,6 +393,11 @@ export function CustomRoutineDialog({
   const [editingTrainingValue, setEditingTrainingValue] = useState("");
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [customExerciseEditorOpen, setCustomExerciseEditorOpen] =
+    useState(false);
+  const [editingCustomExerciseId, setEditingCustomExerciseId] = useState<
+    string | null
+  >(null);
   const initialStateRef = useRef<{
     name: string;
     description: string;
@@ -411,6 +418,29 @@ export function CustomRoutineDialog({
     () => exerciseResults.slice(0, 100),
     [exerciseResults],
   );
+
+  const applyUpdatedCustomExercise = (updated: CustomExerciseForEdit) => {
+    setSelectedExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.exerciseId !== updated.id) return ex;
+        const lines = updated.description
+          .split(/\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0);
+        return {
+          ...ex,
+          name: updated.name,
+          categoryName: updated.categoryName,
+          description: lines.length > 0 ? lines : ex.description,
+          imageUrl: updated.imageUrl,
+          videoUrl: updated.videoUrl,
+          imageUrls: updated.imageUrl ? [updated.imageUrl] : [],
+          videoUrls: updated.videoUrl ? [updated.videoUrl] : [],
+        };
+      }),
+    );
+    setHasUnsavedChanges(true);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -1169,7 +1199,7 @@ export function CustomRoutineDialog({
                 <Input
                   value={exerciseSearch}
                   onChange={(e) => setExerciseSearch(e.target.value)}
-                  placeholder="Buscar por nombre, músculo o categoría..."
+                  placeholder="Buscar por nombre o músculo…"
                   className="border-gray-700 bg-gray-800 pl-10 text-gray-100"
                 />
               </div>
@@ -1328,6 +1358,25 @@ export function CustomRoutineDialog({
         open={detailOpen}
         onOpenChange={setDetailOpen}
         exercise={exerciseDetail}
+        onEditCustom={
+          exerciseDetail?.source === "custom"
+            ? () => {
+                if (!exerciseDetail) return;
+                setEditingCustomExerciseId(exerciseDetail.exerciseId);
+                setDetailOpen(false);
+                setCustomExerciseEditorOpen(true);
+              }
+            : undefined
+        }
+      />
+      <CustomExerciseDialog
+        open={customExerciseEditorOpen}
+        onOpenChange={(next) => {
+          if (!next) setEditingCustomExerciseId(null);
+          setCustomExerciseEditorOpen(next);
+        }}
+        editingExerciseId={editingCustomExerciseId}
+        onSaved={applyUpdatedCustomExercise}
       />
       <Dialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
         <DialogContent className="border-gray-800 bg-gray-900 text-white sm:max-w-md">

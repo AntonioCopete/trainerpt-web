@@ -121,12 +121,32 @@ export interface RoutineTemplateExercise {
   order: number;
 }
 
+export interface MuscleCatalogItem {
+  id: string;
+  name: string;
+  nameEs: string;
+}
+
 export interface CreateCustomExercisePayload {
   name: string;
   description?: string;
   categoryName?: string;
   imageUrl?: string;
   videoUrl?: string;
+  primaryMuscleIds?: string[];
+  secondaryMuscleIds?: string[];
+}
+
+/** Respuesta de GET/PATCH ejercicio propio para el formulario de edición */
+export interface CustomExerciseForEdit {
+  id: string;
+  name: string;
+  categoryName: string | null;
+  description: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  primaryMuscleId: string | null;
+  secondaryMuscleIds: string[];
 }
 
 export const ROUTINE_STATUS_LABELS: Record<RoutineAssignmentStatus, string> = {
