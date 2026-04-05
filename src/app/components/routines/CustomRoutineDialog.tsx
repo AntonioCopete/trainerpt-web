@@ -361,6 +361,12 @@ export function CustomRoutineDialog({
     muscleLabelsSecondary: Array.isArray(exercise?.muscleLabelsSecondary)
       ? exercise.muscleLabelsSecondary
       : undefined,
+    primaryMuscleIds: Array.isArray(exercise?.primaryMuscleIds)
+      ? exercise.primaryMuscleIds
+      : undefined,
+    secondaryMuscleIds: Array.isArray(exercise?.secondaryMuscleIds)
+      ? exercise.secondaryMuscleIds
+      : undefined,
   });
 
   const supabase = createSupabaseBrowser();
@@ -1192,14 +1198,18 @@ export function CustomRoutineDialog({
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">
-                Buscar ejercicio en biblioteca
+                Buscar en la biblioteca
               </label>
+              <p className="text-[11px] leading-snug text-gray-500">
+                Nombre, categoría, autor o palabras del ejercicio (incluido
+                músculo en texto).
+              </p>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 <Input
                   value={exerciseSearch}
                   onChange={(e) => setExerciseSearch(e.target.value)}
-                  placeholder="Buscar por nombre o músculo…"
+                  placeholder="Ej. remo, espalda, press…"
                   className="border-gray-700 bg-gray-800 pl-10 text-gray-100"
                 />
               </div>
