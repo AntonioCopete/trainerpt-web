@@ -90,6 +90,9 @@ export interface RoutineExercise {
   /** Etiquetas listas para UI (backend); preferir sobre muscles crudos */
   muscleLabelsPrimary?: string[];
   muscleLabelsSecondary?: string[];
+  /** IDs del catálogo Muscle que encajan con las etiquetas del ejercicio */
+  primaryMuscleIds?: string[];
+  secondaryMuscleIds?: string[];
 }
 
 export interface RoutineTemplateExercise {
