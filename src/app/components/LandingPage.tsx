@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Play,
   ArrowRight,
   Star,
   Crown,
@@ -60,7 +59,6 @@ export function LandingPage() {
 
   const [activeFeature, setActiveFeature] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
-  const [showVideo, setShowVideo] = useState(false);
 
   // Bubbles solo en cliente (evita hydration mismatch)
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
@@ -279,7 +277,7 @@ export function LandingPage() {
       bulletPoints: [
         "Cobros automáticos mes a mes (sin recordatorios)",
         "Ve de un vistazo quién ha pagado y quién no",
-        "Reduce impagos con recordatorios inteligentes",
+        "Reduce impagos con recordatorios automáticos",
         "Integrado con Stripe: seguro y profesional",
       ],
       icon: <CreditCard className="h-8 w-8" />,
@@ -468,9 +466,9 @@ export function LandingPage() {
               reduceMotion ? undefined : { delay: 0.5, duration: 0.8 }
             }
           >
-            La primera plataforma fitness con constructor visual revolucionario
-            y sistema colaborativo único. Transforma tu negocio fitness en una
-            experiencia premium.
+            Organiza clientes, rutinas y formularios en un solo lugar:
+            constructor visual de entrenamientos, plantillas reutilizables y
+            seguimiento por formularios, accesible desde el navegador.
           </motion.p>
 
           <motion.div
@@ -491,16 +489,6 @@ export function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-
-            {/* <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-12 py-6 border-2 border-white/30 text-black rounded-full"
-              onClick={() => setShowVideo(true)}
-            >
-              <Play className="mr-2 h-5 w-5" />
-              Ver Demo Interactivo
-            </Button> */}
           </motion.div>
 
           {/* Stats */}
@@ -549,44 +537,6 @@ export function LandingPage() {
         )}
       </section>
 
-      {/* Video Modal */}
-      <AnimatePresence>
-        {showVideo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowVideo(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              className="relative max-w-4xl w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <video
-                controls
-                autoPlay
-                className="w-full h-full object-cover"
-                poster="/images/personal-training.jpg"
-              >
-                <source src="/videos/demo-preview.mp4" type="video/mp4" />
-                Tu navegador no soporta el elemento de video.
-              </video>
-              <button
-                onClick={() => setShowVideo(false)}
-                className="absolute top-4 right-4 text-white hover:text-red-500 text-2xl"
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Features */}
       <section className="py-20 relative z-10 bg-black">
         <div className="container mx-auto px-4">
@@ -604,9 +554,9 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-400 max-w-4xl mx-auto">
-              La primera plataforma fitness con IA integrada, análisis
-              predictivo y constructor visual revolucionario. Todo lo que
-              necesitas en una sola herramienta.
+              Menos herramientas sueltas y menos fricción con tus clientes:
+              rutinas con plantillas, formularios de seguimiento y gestión de
+              cartera en una sola aplicación web.
             </p>
           </motion.div>
 
@@ -687,12 +637,6 @@ export function LandingPage() {
                       ),
                     )}
                   </ul>
-                  <div className="flex gap-4 mt-8">
-                    <Button className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-full px-8 py-3">
-                      Ver Demo Interactivo
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </div>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-3xl blur-3xl" />
@@ -727,7 +671,8 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Desde gratis hasta enterprise. Escala tu negocio sin límites.
+              Empieza gratis y sube de plan cuando necesites más clientes
+              activos.
             </p>
           </motion.div>
 
@@ -794,9 +739,12 @@ export function LandingPage() {
                         ? "bg-white text-red-500 hover:bg-gray-100"
                         : "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
                     }`}
+                    asChild
                   >
-                    {plan.cta}
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <Link href="/join">
+                      {plan.cta}
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
                   </Button>
                 </div>
               </motion.div>
@@ -822,8 +770,9 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-400 max-w-4xl mx-auto">
-              Diseñada por y para profesionales del fitness. Todas las
-              herramientas que necesitas para destacar en la industria.
+              Pensada para el día a día del entrenador: lo esencial para
+              preparar trabajo, enviarlo al cliente y mantener el seguimiento
+              ordenado.
             </p>
           </motion.div>
 
@@ -894,9 +843,8 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl mb-10 max-w-3xl mx-auto text-gray-300">
-              TrainerPT convierte tu forma de trabajar en una experiencia
-              profesional y organizada. Rutinas, seguimiento, gestión de
-              clientes y todo lo que necesitas en un solo lugar.
+              Rutinas, formularios y clientes en un solo flujo, sin depender de
+              hojas de cálculo ni chats sueltos.
             </p>
             <Button
               size="lg"
