@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   ClipboardList,
   Dumbbell,
-  UtensilsCrossed,
+  // UtensilsCrossed, // reactivar junto con «Dietas» en NAV_ITEMS
   FolderOpen,
   TrendingUp,
 } from "lucide-react";
@@ -30,12 +30,14 @@ const NAV_ITEMS = [
     icon: Dumbbell,
     active: true,
   },
+  /* Dietas: oculto de momento (filtro «Dieta» en Recursos).
   {
     label: "Dietas",
     href: "/member/diets",
     icon: UtensilsCrossed,
     active: true,
   },
+  */
   {
     label: "Recursos",
     href: "/member/resources",
