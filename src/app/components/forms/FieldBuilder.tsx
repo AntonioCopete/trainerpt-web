@@ -27,6 +27,8 @@ interface FieldBuilderProps {
   field: CustomField;
   onUpdate: (updated: CustomField) => void;
   onRemove: () => void;
+  /** Campos del sistema (peso, medidas, fotos): no se borran ni cambia el tipo */
+  isBaseField?: boolean;
   dragHandleProps?: Record<string, unknown>;
 }
 
@@ -34,6 +36,7 @@ export function FieldBuilder({
   field,
   onUpdate,
   onRemove,
+  isBaseField = false,
   dragHandleProps,
 }: FieldBuilderProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -61,18 +64,27 @@ export function FieldBuilder({
           <span className="text-sm font-medium text-white truncate">
             {field.label || "Campo sin nombre"}
           </span>
+          {isBaseField && (
+            <span className="shrink-0 rounded bg-gray-700/80 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+              Base
+            </span>
+          )}
           {field.required && (
             <span className="text-[10px] text-red-400">*</span>
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={onRemove}
-          className="rounded-lg p-1 text-gray-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {!isBaseField ? (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-lg p-1 text-gray-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        ) : (
+          <span className="w-8 shrink-0" aria-hidden />
+        )}
       </div>
 
       {/* Body */}
@@ -93,37 +105,44 @@ export function FieldBuilder({
             {/* Type */}
             <div className="space-y-1.5">
               <Label className="text-xs text-gray-400">Tipo de campo</Label>
-              <Select
-                value={field.type}
-                onValueChange={(v: CustomFieldType) =>
-                  onUpdate({
-                    ...field,
-                    type: v,
-                    unit: v === "number" ? (field.unit ?? "") : undefined,
-                  })
-                }
-              >
-                <SelectTrigger className="h-9 rounded-lg border-gray-700 bg-gray-800 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-gray-800 bg-gray-900 text-gray-300">
-                  {FIELD_TYPE_OPTIONS.map((opt) => {
-                    const OptIcon = opt.icon;
-                    return (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="focus:bg-gray-800 focus:text-white"
-                      >
-                        <span className="flex items-center gap-2">
-                          <OptIcon className="h-3.5 w-3.5" />
-                          {opt.label}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              {isBaseField ? (
+                <div className="flex h-9 items-center rounded-lg border border-gray-700 bg-gray-800/80 px-3 text-sm text-gray-300">
+                  {FIELD_TYPE_OPTIONS.find((o) => o.value === field.type)
+                    ?.label ?? field.type}
+                </div>
+              ) : (
+                <Select
+                  value={field.type}
+                  onValueChange={(v: CustomFieldType) =>
+                    onUpdate({
+                      ...field,
+                      type: v,
+                      unit: v === "number" ? (field.unit ?? "") : undefined,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-gray-700 bg-gray-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-gray-800 bg-gray-900 text-gray-300">
+                    {FIELD_TYPE_OPTIONS.map((opt) => {
+                      const OptIcon = opt.icon;
+                      return (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          className="focus:bg-gray-800 focus:text-white"
+                        >
+                          <span className="flex items-center gap-2">
+                            <OptIcon className="h-3.5 w-3.5" />
+                            {opt.label}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 

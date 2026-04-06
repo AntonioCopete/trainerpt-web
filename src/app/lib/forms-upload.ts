@@ -87,3 +87,31 @@ export async function getPresignedPhotoUrl(
   if (!url) throw new Error("URL de foto no válida");
   return url;
 }
+
+/** Varias URLs de lectura en una sola petición (POST /forms/photo-urls). */
+export async function getPresignedPhotoUrlsBatch(
+  keys: string[],
+  token: string,
+): Promise<Record<string, string>> {
+  const unique = [...new Set(keys.map((k) => k.trim()).filter(Boolean))];
+  if (unique.length === 0) return {};
+
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const res = await fetch(`${base}/forms/photo-urls`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ keys: unique }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || `No se pudieron firmar las fotos (${res.status}).`);
+  }
+
+  const data = (await res.json()) as { urls?: Record<string, string> };
+  return data.urls ?? {};
+}

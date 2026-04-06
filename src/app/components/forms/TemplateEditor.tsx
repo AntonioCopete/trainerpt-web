@@ -10,7 +10,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Trash2,
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,8 @@ import { FormPreview } from "./FormPreview";
 import type { CustomField, FormTemplate } from "../../lib/types/forms";
 import {
   getDefaultTemplateFields,
+  getTemplateSchemaBaseFieldsError,
+  isBaseFormTemplateFieldId,
   nextPlaceholderFieldId,
 } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
@@ -62,11 +63,22 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
 
   const updateField = useCallback((updated: CustomField) => {
     setCustomFields((prev) =>
-      prev.map((f) => (f.id === updated.id ? updated : f)),
+      prev.map((f) => {
+        if (f.id !== updated.id) return f;
+        if (isBaseFormTemplateFieldId(f.id) && updated.type !== f.type) {
+          toast.error("No se puede cambiar el tipo de un campo base.");
+          return f;
+        }
+        return updated;
+      }),
     );
   }, []);
 
   const removeField = useCallback((id: string) => {
+    if (isBaseFormTemplateFieldId(id)) {
+      toast.error("Los campos base no se pueden eliminar.");
+      return;
+    }
     setCustomFields((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
@@ -74,12 +86,9 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
     setCustomFields(reordered.map((f, i) => ({ ...f, order: i })));
   }, []);
 
-  const handleClearAll = useCallback(() => {
-    setCustomFields([]);
-  }, []);
-
-  const handleRestoreDefaults = useCallback(() => {
+  const handleLoadDefaultBaseFields = useCallback(() => {
     setCustomFields(getDefaultTemplateFields());
+    toast.success("Se cargaron los campos base predeterminados.");
   }, []);
 
   const handleSave = async () => {
@@ -96,6 +105,21 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
       return;
     }
     setFormErrors({});
+
+    const baseErr = getTemplateSchemaBaseFieldsError(customFields);
+    if (baseErr) {
+      toast.error(baseErr);
+      return;
+    }
+
+    const seen = new Set<string>();
+    for (const f of customFields) {
+      if (seen.has(f.id)) {
+        toast.error(`Hay ids duplicados en el formulario: ${f.id}`);
+        return;
+      }
+      seen.add(f.id);
+    }
 
     setSaving(true);
     try {
@@ -315,46 +339,19 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
 
           {/* Fields */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-white">
                 Campos del formulario
               </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {customFields.length} campo
-                  {customFields.length !== 1 ? "s" : ""}
-                </span>
-                {!existing && (
-                  <>
-                    {customFields.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearAll}
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-800 hover:text-red-400 transition-colors"
-                        title="Limpiar todos los campos"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Limpiar
-                      </button>
-                    )}
-                    {customFields.length === 0 && (
-                      <button
-                        type="button"
-                        onClick={handleRestoreDefaults}
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-800 hover:text-orange-400 transition-colors"
-                        title="Restaurar campos predeterminados"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        Predeterminados
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+              <span className="text-xs text-gray-500">
+                {customFields.length} campo
+                {customFields.length !== 1 ? "s" : ""}
+              </span>
             </div>
 
             <p className="text-xs text-gray-500">
-              Arrastra para reordenar. Elimina los campos que no necesites.
+              Los campos marcados como Base no se pueden borrar ni cambiar de
+              tipo. Puedes marcar si son obligatorios y añadir campos extra.
             </p>
 
             {customFields.length > 0 ? (
@@ -371,15 +368,28 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
                         field={field}
                         onUpdate={updateField}
                         onRemove={() => removeField(field.id)}
+                        isBaseField={isBaseFormTemplateFieldId(field.id)}
                       />
                     </Reorder.Item>
                   ))}
                 </AnimatePresence>
               </Reorder.Group>
             ) : (
-              <p className="py-4 text-center text-sm text-gray-600">
-                No hay campos. Agrega al menos un campo para tu formulario.
-              </p>
+              <div className="space-y-3 py-4 text-center">
+                <p className="text-sm text-gray-600">
+                  No hay campos en esta plantilla. Carga los campos base
+                  predeterminados o añade campos con el botón de abajo.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleLoadDefaultBaseFields}
+                  className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Campos base predeterminados
+                </Button>
+              </div>
             )}
 
             <Button

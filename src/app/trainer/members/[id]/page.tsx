@@ -17,6 +17,7 @@ import {
   Calendar,
   FolderOpen,
   UtensilsCrossed,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,6 +44,7 @@ import type {
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { CustomRoutineDialog } from "@/src/app/components/routines/CustomRoutineDialog";
 import { TrainerResourceManager } from "@/src/app/components/resources/TrainerResourceManager";
+import { MemberProgressPanel } from "@/src/app/components/forms/MemberProgressPanel";
 import { toast } from "sonner";
 
 export default function TrainerClientDetailPage({
@@ -386,6 +388,13 @@ export default function TrainerClientDetailPage({
             Formularios
           </TabsTrigger>
           <TabsTrigger
+            value="progress"
+            className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
+          >
+            <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400" />
+            Progreso
+          </TabsTrigger>
+          <TabsTrigger
             value="routines"
             className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
           >
@@ -564,6 +573,20 @@ export default function TrainerClientDetailPage({
                   })}
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="progress" className="mt-0 outline-none">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+              <TrendingUp className="h-4 w-4 text-emerald-400" />
+              Evolución del cliente
+            </h2>
+            <p className="mb-6 text-sm text-gray-500">
+              Medidas y fotos de los formularios ya completados, en orden
+              cronológico.
+            </p>
+            <MemberProgressPanel memberId={id} />
           </div>
         </TabsContent>
 

@@ -7,6 +7,7 @@ import {
   Dumbbell,
   UtensilsCrossed,
   FolderOpen,
+  TrendingUp,
 } from "lucide-react";
 import { Toaster } from "sonner";
 
@@ -15,6 +16,12 @@ const NAV_ITEMS = [
     label: "Formularios",
     href: "/member/forms",
     icon: ClipboardList,
+    active: true,
+  },
+  {
+    label: "Progreso",
+    href: "/member/progress",
+    icon: TrendingUp,
     active: true,
   },
   {

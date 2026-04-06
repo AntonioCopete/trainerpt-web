@@ -70,7 +70,10 @@ export function SendFormDialog({
       setSearch("");
       setSelectedMemberId(preselectedMemberId ?? null);
       setRepeat("none");
-      setDueAt("");
+      const d = new Date();
+      setDueAt(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+      );
     }
   }, [open, preselectedMemberId, getMembers]);
 
@@ -90,23 +93,25 @@ export function SendFormDialog({
       const session = await supabase.auth.getSession();
       const token = session?.data?.session?.access_token;
 
-      const payload: Record<string, unknown> = { memberId: selectedMemberId };
+      if (!dueAt.trim()) {
+        toast.error("La fecha límite es obligatoria.");
+        return;
+      }
+
+      // Backend interpreta `YYYY-MM-DD` como fin de día en UTC.
+      const [yyyy, mm, dd] = dueAt.split("-").map((v) => Number(v));
+      const dueAtUtcEnd = new Date(Date.UTC(yyyy, mm - 1, dd, 23, 59, 59, 999));
+      if (dueAtUtcEnd.getTime() < Date.now()) {
+        toast.error("La fecha límite no puede ser anterior a hoy");
+        return;
+      }
+
+      const payload: Record<string, unknown> = {
+        memberId: selectedMemberId,
+        dueAt,
+      };
       if (repeat !== "none") {
         payload.repeat = repeat;
-      }
-      if (dueAt) {
-        // Cliente: impedir seleccionar fechas pasadas.
-        // Backend interpreta `YYYY-MM-DD` como fin de día en UTC.
-        const [yyyy, mm, dd] = dueAt.split("-").map((v) => Number(v));
-        const dueAtUtcEnd = new Date(
-          Date.UTC(yyyy, mm - 1, dd, 23, 59, 59, 999),
-        );
-        if (dueAtUtcEnd.getTime() < Date.now()) {
-          toast.error("La fecha límite no puede ser anterior a hoy");
-          return;
-        }
-
-        payload.dueAt = dueAt;
       }
 
       const res = await fetch(
@@ -230,16 +235,20 @@ export function SendFormDialog({
             <Label className="text-sm text-gray-300 flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Fecha límite
+              <span className="text-red-500" aria-hidden>
+                *
+              </span>
             </Label>
             <Input
               type="date"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
               min={new Date().toISOString().slice(0, 10)}
-              className="h-10 rounded-xl border-gray-700 bg-gray-800 text-white focus:border-red-500 focus:ring-red-500/20"
+              className="h-10 rounded-xl border-gray-700 bg-[dimgrey] text-white [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 focus:border-red-500 focus:ring-red-500/20"
             />
             <p className="text-xs text-gray-500">
-              El cliente podrá rellenar 48h antes de la fecha límite
+              Obligatoria. El cliente podrá rellenar 48h antes de la fecha
+              límite.
             </p>
           </div>
 
@@ -283,7 +292,9 @@ export function SendFormDialog({
           </Button>
           <Button
             onClick={handleSend}
-            disabled={!selectedMemberId || !template || sending}
+            disabled={
+              !selectedMemberId || !template || sending || !dueAt.trim()
+            }
             className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
