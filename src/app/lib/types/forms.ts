@@ -161,6 +161,42 @@ export function getDefaultTemplateFields(): CustomField[] {
   ];
 }
 
+let cachedBaseFormTemplateFieldIdSet: Set<string> | null = null;
+
+function getBaseFormTemplateFieldIdSet(): Set<string> {
+  if (!cachedBaseFormTemplateFieldIdSet) {
+    cachedBaseFormTemplateFieldIdSet = new Set(
+      getDefaultTemplateFields().map((f) => f.id),
+    );
+  }
+  return cachedBaseFormTemplateFieldIdSet;
+}
+
+/** True si `id` es uno de los campos de `getDefaultTemplateFields()`. */
+export function isBaseFormTemplateFieldId(id: string): boolean {
+  return getBaseFormTemplateFieldIdSet().has(id);
+}
+
+/**
+ * Valida que el schema incluye todos los campos base con el tipo correcto.
+ * @returns mensaje de error o null si es válido.
+ */
+export function getTemplateSchemaBaseFieldsError(
+  fields: Pick<CustomField, "id" | "type">[],
+): string | null {
+  const byId = new Map(fields.map((f) => [f.id, f.type]));
+  for (const base of getDefaultTemplateFields()) {
+    const t = byId.get(base.id);
+    if (t === undefined) {
+      return `Falta el campo base «${base.label}» (${base.id}).`;
+    }
+    if (t !== base.type) {
+      return `El campo «${base.label}» (${base.id}) debe ser de tipo «${base.type}».`;
+    }
+  }
+  return null;
+}
+
 // --- Template ---
 
 export interface FormTemplate {
@@ -403,7 +439,10 @@ export interface MemberSummary {
  * El usuario debe sustituirlo por una clave estándar (inglés, minúsculas).
  */
 export function nextPlaceholderFieldId(existingIds: string[]): string {
-  const set = new Set(existingIds);
+  const set = new Set<string>(existingIds);
+  for (const f of getDefaultTemplateFields()) {
+    set.add(f.id);
+  }
   let n = 0;
   while (set.has(`field_${n}`)) n++;
   return `field_${n}`;
