@@ -48,7 +48,7 @@ export default async function RootLayout({ children }) {
   } = await supabase.auth.getSession();
 
   return (
-    <html lang="es">
+    <html lang="es" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

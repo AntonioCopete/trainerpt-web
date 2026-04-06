@@ -8,6 +8,7 @@ import {
   UtensilsCrossed,
   Users,
   CreditCard,
+  FolderOpen,
 } from "lucide-react";
 import { Toaster } from "sonner";
 
@@ -30,11 +31,18 @@ const NAV_ITEMS = [
     icon: Dumbbell,
     active: true,
   },
+
   {
     label: "Dietas",
     href: "/trainer/diets",
     icon: UtensilsCrossed,
-    active: false,
+    active: true,
+  },
+  {
+    label: "Recursos",
+    href: "/trainer/resources",
+    icon: FolderOpen,
+    active: true,
   },
   {
     label: "Suscripción",

@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Dumbbell, UtensilsCrossed } from "lucide-react";
+import {
+  ClipboardList,
+  Dumbbell,
+  UtensilsCrossed,
+  FolderOpen,
+} from "lucide-react";
 import { Toaster } from "sonner";
 
 const NAV_ITEMS = [
@@ -22,7 +27,13 @@ const NAV_ITEMS = [
     label: "Dietas",
     href: "/member/diets",
     icon: UtensilsCrossed,
-    active: false,
+    active: true,
+  },
+  {
+    label: "Recursos",
+    href: "/member/resources",
+    icon: FolderOpen,
+    active: true,
   },
 ];
 
