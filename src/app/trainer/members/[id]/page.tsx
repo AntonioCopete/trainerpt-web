@@ -16,7 +16,7 @@ import {
   X,
   Calendar,
   FolderOpen,
-  UtensilsCrossed,
+  // UtensilsCrossed, // reactivar con pestaña Dietas comentada abajo
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -401,6 +401,7 @@ export default function TrainerClientDetailPage({
             <Dumbbell className="h-4 w-4 shrink-0 text-orange-400" />
             Rutinas
           </TabsTrigger>
+          {/*
           <TabsTrigger
             value="diets"
             className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
@@ -408,6 +409,7 @@ export default function TrainerClientDetailPage({
             <UtensilsCrossed className="h-4 w-4 shrink-0 text-amber-400" />
             Dietas
           </TabsTrigger>
+          */}
           <TabsTrigger
             value="resources"
             className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
@@ -705,6 +707,7 @@ export default function TrainerClientDetailPage({
           </div>
         </TabsContent>
 
+        {/*
         <TabsContent value="diets" className="mt-0 outline-none">
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
             <p className="mb-4 text-sm text-gray-500">
@@ -729,14 +732,15 @@ export default function TrainerClientDetailPage({
             />
           </div>
         </TabsContent>
+        */}
 
         <TabsContent value="resources" className="mt-0 outline-none">
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
             <p className="mb-4 text-sm text-gray-500">
-              Todos los tipos de documento (dieta, rutina, general) con filtros.
-              Las subidas quedan asignadas solo a{" "}
-              {member.fullName || "este cliente"}; usa la pestaña Dietas si
-              prefieres centrarte en nutrición.
+              Documentos compartidos (incluidos planes en PDF como tipo{" "}
+              <span className="text-gray-300">dieta</span> si lo indicas al
+              subir). Filtra por categoría; todo queda asignado solo a{" "}
+              {member.fullName || "este cliente"}.
             </p>
             <TrainerResourceManager
               hidePageHeader

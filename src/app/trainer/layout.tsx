@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   ClipboardList,
   Dumbbell,
-  UtensilsCrossed,
+  // UtensilsCrossed, // reactivar junto con el ítem «Dietas» abajo
   Users,
   CreditCard,
   FolderOpen,
@@ -31,13 +31,14 @@ const NAV_ITEMS = [
     icon: Dumbbell,
     active: true,
   },
-
+  /* Dietas: oculto de momento (planes nutricionales como PDF → Recursos).
   {
     label: "Dietas",
     href: "/trainer/diets",
     icon: UtensilsCrossed,
     active: true,
   },
+  */
   {
     label: "Recursos",
     href: "/trainer/resources",
