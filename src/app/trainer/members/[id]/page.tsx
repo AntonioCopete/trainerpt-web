@@ -15,8 +15,11 @@ import {
   Eye,
   X,
   Calendar,
+  FolderOpen,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +42,7 @@ import type {
 } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { CustomRoutineDialog } from "@/src/app/components/routines/CustomRoutineDialog";
+import { TrainerResourceManager } from "@/src/app/components/resources/TrainerResourceManager";
 import { toast } from "sonner";
 
 export default function TrainerClientDetailPage({
@@ -372,270 +376,360 @@ export default function TrainerClientDetailPage({
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-white mb-4">
-          <ClipboardList className="h-4 w-4 text-red-400" />
-          Enviar formulario
-        </h2>
-        {templates.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No tienes plantillas. Crea una en Formularios para poder enviarla.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {templates.map((tpl) => (
-              <div
-                key={tpl.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium text-white">{tpl.name}</p>
-                  {tpl.description && (
-                    <p className="text-xs text-gray-500 truncate max-w-md">
-                      {tpl.description}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => openSendDialog(tpl)}
-                  className="gap-1.5 shrink-0 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Enviar
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-          <Dumbbell className="h-4 w-4 text-orange-400" />
-          Asignar rutina
-        </h2>
-        {routineTemplates.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No tienes rutinas. Crea una en Rutinas para poder asignarla.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {routineTemplates.map((tpl) => (
-              <div
-                key={tpl.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium text-white">{tpl.name}</p>
-                  {tpl.description && (
-                    <p className="max-w-md truncate text-xs text-gray-500">
-                      {tpl.description}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setRoutineToSend(tpl);
-                    setRoutineDialogOpen(true);
-                  }}
-                  className="shrink-0 gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Asignar
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
-        <h2 className="mb-4 text-sm font-semibold text-white">
-          Historial de rutinas
-        </h2>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Link
-            href={`/trainer/routines/assignments?memberId=${id}`}
-            className="inline-flex items-center rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+      <Tabs defaultValue="forms" className="w-full">
+        <TabsList className="mb-2 flex h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex-row sm:flex-wrap sm:gap-1">
+          <TabsTrigger
+            value="forms"
+            className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
           >
-            Ver página de asignaciones de rutinas
-          </Link>
-          <Button
-            onClick={() => setCustomRoutineDialogOpen(true)}
-            size="sm"
-            className="gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+            <ClipboardList className="h-4 w-4 shrink-0 text-red-400" />
+            Formularios
+          </TabsTrigger>
+          <TabsTrigger
+            value="routines"
+            className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
           >
-            <Dumbbell className="h-3.5 w-3.5" />
-            Nueva rutina personalizada
-          </Button>
-        </div>
-        {routineAssignments.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Aún no has asignado ninguna rutina a este member.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {routineAssignments.map((assignment) => (
-              <div
-                key={assignment.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-white">
-                    {assignment.template?.name ?? "Rutina"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(assignment.startDate).toLocaleDateString(
-                      "es-ES",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        timeZone: "UTC",
-                      },
-                    )}{" "}
-                    -{" "}
-                    {new Date(assignment.endDate).toLocaleDateString("es-ES", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    })}
-                  </p>
-                </div>
-                <span className="rounded-full bg-gray-700/60 px-2 py-0.5 text-[11px] font-medium text-gray-200">
-                  {assignment.computedStatus === "active"
-                    ? "Activa"
-                    : assignment.computedStatus === "scheduled"
-                      ? "Programada"
-                      : assignment.computedStatus === "archived"
-                        ? "Archivada"
-                        : "Finalizada"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+            <Dumbbell className="h-4 w-4 shrink-0 text-orange-400" />
+            Rutinas
+          </TabsTrigger>
+          <TabsTrigger
+            value="diets"
+            className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
+          >
+            <UtensilsCrossed className="h-4 w-4 shrink-0 text-amber-400" />
+            Dietas
+          </TabsTrigger>
+          <TabsTrigger
+            value="resources"
+            className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
+          >
+            <FolderOpen className="h-4 w-4 shrink-0 text-amber-400" />
+            Recursos
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Historial de formularios de este miembro */}
-      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
-        <h2 className="mb-4 text-sm font-semibold text-white">
-          Historial de formularios
-        </h2>
-        {assignments.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Aún no has enviado ningún formulario a este miembro.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {assignments
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(b.createdAt ?? b.sentAt ?? 0).getTime() -
-                  new Date(a.createdAt ?? a.sentAt ?? 0).getTime(),
-              )
-              .map((assignment) => {
-                const sentDate = formatAssignmentSentDate(assignment);
-                const windowStatus = getAssignmentWindowStatus(assignment);
-
-                return (
+        <TabsContent value="forms" className="mt-0 space-y-6 outline-none">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+              <ClipboardList className="h-4 w-4 text-red-400" />
+              Enviar formulario
+            </h2>
+            {templates.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No tienes plantillas. Crea una en Formularios para poder
+                enviarla.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {templates.map((tpl) => (
                   <div
-                    key={assignment.id}
+                    key={tpl.id}
                     className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
                   >
                     <div>
-                      <p className="font-medium text-white">
-                        {assignment.template?.name ?? "Formulario"}
-                      </p>
-                      <p className="mt-0.5 text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Enviado el {sentDate}
-                        {assignment.status === "completed" && (
-                          <span className="ml-2 text-[11px] text-gray-500">
-                            · Completado
-                          </span>
-                        )}
-                      </p>
-                      {windowStatus.dueAtFormatted && (
-                        <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Límite: {windowStatus.dueAtFormatted}
+                      <p className="font-medium text-white">{tpl.name}</p>
+                      {tpl.description && (
+                        <p className="max-w-md truncate text-xs text-gray-500">
+                          {tpl.description}
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {assignment.status === "completed" ? (
-                        <>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Completado
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              router.push(
-                                `/trainer/assignments/${assignment.id}`,
-                              )
-                            }
-                            className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Ver respuesta
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          {assignment.status === "archived" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-[11px] font-medium text-gray-300">
-                              <Clock className="h-3 w-3" />
-                              Cancelado
-                            </span>
-                          ) : assignment.status === "missed" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
-                              <Clock className="h-3 w-3" />
-                              Vencido
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
-                              <Clock className="h-3 w-3" />
-                              Pendiente
-                            </span>
-                          )}
+                    <Button
+                      size="sm"
+                      onClick={() => openSendDialog(tpl)}
+                      className="shrink-0 gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Enviar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-                          {assignment.status === "pending" &&
-                            assignment.repeat &&
-                            assignment.repeat !== "none" && (
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="mb-4 text-sm font-semibold text-white">
+              Historial de formularios
+            </h2>
+            {assignments.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Aún no has enviado ningún formulario a este miembro.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {assignments
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt ?? b.sentAt ?? 0).getTime() -
+                      new Date(a.createdAt ?? a.sentAt ?? 0).getTime(),
+                  )
+                  .map((assignment) => {
+                    const sentDate = formatAssignmentSentDate(assignment);
+                    const windowStatus = getAssignmentWindowStatus(assignment);
+
+                    return (
+                      <div
+                        key={assignment.id}
+                        className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+                      >
+                        <div>
+                          <p className="font-medium text-white">
+                            {assignment.template?.name ?? "Formulario"}
+                          </p>
+                          <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                            <Clock className="h-3 w-3" />
+                            Enviado el {sentDate}
+                            {assignment.status === "completed" && (
+                              <span className="ml-2 text-[11px] text-gray-500">
+                                · Completado
+                              </span>
+                            )}
+                          </p>
+                          {windowStatus.dueAtFormatted && (
+                            <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                              <Calendar className="h-3 w-3" />
+                              Límite: {windowStatus.dueAtFormatted}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {assignment.status === "completed" ? (
+                            <>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Completado
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={
-                                  cancellingAssignmentId === assignment.id
-                                }
                                 onClick={() =>
-                                  handleCancelRecurringAssignment(assignment.id)
+                                  router.push(
+                                    `/trainer/assignments/${assignment.id}`,
+                                  )
                                 }
-                                className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
                               >
-                                <X className="h-3.5 w-3.5" />
-                                {cancellingAssignmentId === assignment.id
-                                  ? "Cancelando..."
-                                  : "Cancelar"}
+                                <Eye className="h-3.5 w-3.5" />
+                                Ver respuesta
                               </Button>
-                            )}
-                        </>
+                            </>
+                          ) : (
+                            <>
+                              {assignment.status === "archived" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-[11px] font-medium text-gray-300">
+                                  <Clock className="h-3 w-3" />
+                                  Cancelado
+                                </span>
+                              ) : assignment.status === "missed" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
+                                  <Clock className="h-3 w-3" />
+                                  Vencido
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
+                                  <Clock className="h-3 w-3" />
+                                  Pendiente
+                                </span>
+                              )}
+
+                              {assignment.status === "pending" &&
+                                assignment.repeat &&
+                                assignment.repeat !== "none" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={
+                                      cancellingAssignmentId === assignment.id
+                                    }
+                                    onClick={() =>
+                                      handleCancelRecurringAssignment(
+                                        assignment.id,
+                                      )
+                                    }
+                                    className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                    {cancellingAssignmentId === assignment.id
+                                      ? "Cancelando..."
+                                      : "Cancelar"}
+                                  </Button>
+                                )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="routines" className="mt-0 space-y-6 outline-none">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+              <Dumbbell className="h-4 w-4 text-orange-400" />
+              Asignar rutina
+            </h2>
+            {routineTemplates.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No tienes rutinas. Crea una en Rutinas para poder asignarla.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {routineTemplates.map((tpl) => (
+                  <div
+                    key={tpl.id}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium text-white">{tpl.name}</p>
+                      {tpl.description && (
+                        <p className="max-w-md truncate text-xs text-gray-500">
+                          {tpl.description}
+                        </p>
                       )}
                     </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setRoutineToSend(tpl);
+                        setRoutineDialogOpen(true);
+                      }}
+                      className="shrink-0 gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Asignar
+                    </Button>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <h2 className="mb-4 text-sm font-semibold text-white">
+              Historial de rutinas
+            </h2>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Link
+                href={`/trainer/routines/assignments?memberId=${id}`}
+                className="inline-flex items-center rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+              >
+                Ver página de asignaciones de rutinas
+              </Link>
+              <Button
+                onClick={() => setCustomRoutineDialogOpen(true)}
+                size="sm"
+                className="gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+              >
+                <Dumbbell className="h-3.5 w-3.5" />
+                Nueva rutina personalizada
+              </Button>
+            </div>
+            {routineAssignments.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Aún no has asignado ninguna rutina a este member.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {routineAssignments.map((assignment) => (
+                  <div
+                    key={assignment.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-white">
+                        {assignment.template?.name ?? "Rutina"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(assignment.startDate).toLocaleDateString(
+                          "es-ES",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            timeZone: "UTC",
+                          },
+                        )}{" "}
+                        -{" "}
+                        {new Date(assignment.endDate).toLocaleDateString(
+                          "es-ES",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            timeZone: "UTC",
+                          },
+                        )}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-gray-700/60 px-2 py-0.5 text-[11px] font-medium text-gray-200">
+                      {assignment.computedStatus === "active"
+                        ? "Activa"
+                        : assignment.computedStatus === "scheduled"
+                          ? "Programada"
+                          : assignment.computedStatus === "archived"
+                            ? "Archivada"
+                            : "Finalizada"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="diets" className="mt-0 outline-none">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <p className="mb-4 text-sm text-gray-500">
+              Planes nutricionales en PDF u otros documentos de tipo{" "}
+              <span className="text-gray-300">dieta</span> para{" "}
+              {member.fullName || "este cliente"}. Lo que subas aquí se asigna
+              solo a esta persona.
+            </p>
+            <TrainerResourceManager
+              fixedResourceType="diet"
+              hidePageHeader
+              assignToMemberId={id}
+              assignToMemberLabel={
+                member.fullName?.trim() || member.email || "este cliente"
+              }
+              pageTitle=""
+              pageSubtitle=""
+              emptyTitle="Ningún plan de dieta con este cliente"
+              emptyDescription="Sube un PDF o imagen arriba; se compartirá solo con esta persona. El listado global de dietas está en el menú Dietas."
+              assignToMemberHubHref="/trainer/diets"
+              assignToMemberHubLabel="Hub de dietas"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="resources" className="mt-0 outline-none">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-6">
+            <p className="mb-4 text-sm text-gray-500">
+              Todos los tipos de documento (dieta, rutina, general) con filtros.
+              Las subidas quedan asignadas solo a{" "}
+              {member.fullName || "este cliente"}; usa la pestaña Dietas si
+              prefieres centrarte en nutrición.
+            </p>
+            <TrainerResourceManager
+              hidePageHeader
+              assignToMemberId={id}
+              assignToMemberLabel={
+                member.fullName?.trim() || member.email || "este cliente"
+              }
+              pageTitle=""
+              pageSubtitle=""
+              emptyTitle="Ningún documento compartido con este cliente"
+              emptyDescription="Sube un archivo arriba o gestiona la biblioteca completa desde Recursos en el menú."
+              showHubResourcesLink
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <SendFormDialog
         open={sendDialogOpen}

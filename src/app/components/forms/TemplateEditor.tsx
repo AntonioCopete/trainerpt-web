@@ -25,6 +25,7 @@ import {
   nextPlaceholderFieldId,
 } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
+import { messageFromTemplateSaveResponse } from "../../lib/routine-template-save-errors";
 import { toast } from "sonner";
 
 interface TemplateEditorProps {
@@ -41,6 +42,10 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
   );
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
   const supabase = createSupabaseBrowser();
 
   const addField = useCallback(() => {
@@ -78,7 +83,20 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
   }, []);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    const nextErrors: { name?: string; description?: string } = {};
+    if (!name.trim()) {
+      nextErrors.name = "El nombre es obligatorio.";
+    }
+    if (!description.trim()) {
+      nextErrors.description = "La descripción es obligatoria.";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      toast.error("Revisa los campos marcados como obligatorios.");
+      return;
+    }
+    setFormErrors({});
+
     setSaving(true);
     try {
       const payload = {
@@ -111,23 +129,42 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
         body: JSON.stringify(payload),
       });
 
+      const contentType = res.headers.get("content-type") ?? "";
+      let data: unknown = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json().catch(() => ({}));
+      } else {
+        const text = await res.text().catch(() => "");
+        if (text) {
+          try {
+            data = JSON.parse(text) as unknown;
+          } catch {
+            data = { message: text };
+          }
+        }
+      }
+
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Error al guardar la plantilla");
+        toast.error(
+          messageFromTemplateSaveResponse(
+            res,
+            data,
+            "No se pudo guardar la plantilla",
+          ),
+        );
+        return;
       }
 
       toast.success("Plantilla guardada correctamente");
       router.push("/trainer/forms");
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Error al guardar la plantilla",
-      );
+    } catch {
+      toast.error("Error de red al guardar la plantilla");
     } finally {
       setSaving(false);
     }
   };
 
-  const isValid = name.trim().length > 0;
+  const isValid = name.trim().length > 0 && description.trim().length > 0;
 
   return (
     <div className="space-y-6">
@@ -189,25 +226,90 @@ export function TemplateEditor({ existing }: TemplateEditorProps) {
           {/* Name & description */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-sm text-gray-300">
-                Nombre de la plantilla <span className="text-red-500">*</span>
+              <Label
+                htmlFor="form-template-name"
+                className="text-sm text-gray-300"
+              >
+                Nombre de la plantilla{" "}
+                <span className="text-red-500" aria-hidden>
+                  *
+                </span>
               </Label>
               <Input
+                id="form-template-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (formErrors.name)
+                    setFormErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder="Ej: Seguimiento Semanal"
-                className="h-11 rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20"
+                required
+                aria-invalid={Boolean(formErrors.name)}
+                aria-describedby={
+                  formErrors.name ? "form-template-name-error" : undefined
+                }
+                className={`h-11 rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 ${
+                  formErrors.name
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }`}
               />
+              {formErrors.name ? (
+                <p
+                  id="form-template-name-error"
+                  className="text-xs text-red-400"
+                  role="alert"
+                >
+                  {formErrors.name}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm text-gray-300">Descripción</Label>
+              <Label
+                htmlFor="form-template-description"
+                className="text-sm text-gray-300"
+              >
+                Descripción{" "}
+                <span className="text-red-500" aria-hidden>
+                  *
+                </span>
+              </Label>
               <Textarea
+                id="form-template-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe el proposito de este formulario..."
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (formErrors.description)
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      description: undefined,
+                    }));
+                }}
+                placeholder="Describe el propósito de este formulario..."
                 rows={3}
-                className="rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 resize-none"
+                required
+                aria-invalid={Boolean(formErrors.description)}
+                aria-describedby={
+                  formErrors.description
+                    ? "form-template-description-error"
+                    : undefined
+                }
+                className={`rounded-xl border-gray-700 bg-gray-800 text-white placeholder:text-gray-600 focus:border-red-500 focus:ring-red-500/20 resize-none ${
+                  formErrors.description
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }`}
               />
+              {formErrors.description ? (
+                <p
+                  id="form-template-description-error"
+                  className="text-xs text-red-400"
+                  role="alert"
+                >
+                  {formErrors.description}
+                </p>
+              ) : null}
             </div>
           </div>
 

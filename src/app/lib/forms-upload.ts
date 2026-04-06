@@ -1,5 +1,5 @@
 /**
- * S3 presigned upload flow for form assignment photos.
+ * Subida con URL firmada (GCS u otro bucket) para fotos de formularios.
  * Backend: POST /forms/assignments/:assignmentId/upload-url
  * DTO: PresignedUploadUrlDto { filename, contentType }
  */

@@ -1,60 +1,66 @@
+import Link from "next/link";
+
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative z-10 bg-gray-900 border-t border-gray-800 py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-xl font-bold mb-4 text-gray-300">CONTACTO</h3>
-            <div className="space-y-2 text-gray-400">
-              <p>
-                <span className="text-red-500 font-medium">Email:</span>{" "}
-                info@trainpt.com
-              </p>
-              <p>
-                <span className="text-red-500 font-medium">Teléfono:</span> +34
-                91 123 45 67
-              </p>
-              <p>
-                <span className="text-red-500 font-medium">Horario:</span> 24/7
-                Soporte IA
-              </p>
+    <footer className="relative z-10 border-t border-gray-800 bg-gray-950">
+      <div className="container mx-auto px-4 py-10">
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-md space-y-3">
+            <p className="text-lg font-semibold tracking-tight text-white">
+              TrainerPT
+            </p>
+            <p className="text-sm leading-relaxed text-gray-400">
+              Herramientas web para entrenadores personales y sus clientes.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:gap-x-16 sm:gap-y-6">
+            <div>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Cuenta
+              </h2>
+              <Link
+                href="/join"
+                className="text-sm text-gray-300 transition hover:text-white"
+              >
+                Entrar o registrarse
+              </Link>
             </div>
-          </div>
-          <div>
-            <h4 className="text-lg font-semibold mb-4 text-gray-300">
-              PLATAFORMA
-            </h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>Constructor Visual</li>
-              <li>IA Integrada</li>
-              <li>Sistema Colaborativo</li>
-              <li>Análisis Predictivo</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-lg font-semibold mb-4 text-gray-300">
-              EMPRESA
-            </h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>Sobre Nosotros</li>
-              <li>Carreras</li>
-              <li>Prensa</li>
-              <li>Inversores</li>
-            </ul>
-          </div>
-          <div>
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 p-6 rounded-2xl text-center">
-              <div className="text-white text-4xl font-bold mb-2">
-                TRAINERPT
-              </div>
-              <p className="text-white/90">El futuro del fitness</p>
+            <div>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Legal
+              </h2>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>
+                  <Link href="/terms" className="transition hover:text-white">
+                    Términos de servicio
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="transition hover:text-white">
+                    Política de privacidad
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Contacto
+              </h2>
+              <a
+                href="mailto:info@trainpt.com"
+                className="text-sm text-gray-300 transition hover:text-white"
+              >
+                info@trainpt.com
+              </a>
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-500">
-          <p>© {year} TrainerPT. Todos los derechos reservados.</p>
+
+        <div className="mt-10 border-t border-gray-800 pt-6 text-center text-xs text-gray-500 md:text-left">
+          © {year} TrainerPT. Todos los derechos reservados.
         </div>
       </div>
     </footer>

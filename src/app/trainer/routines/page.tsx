@@ -20,6 +20,7 @@ import type { RoutineTemplate } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { RoutineTemplateDialog } from "@/src/app/components/routines/RoutineTemplateDialog";
 import { TrainerExerciseLibraryDialog } from "@/src/app/components/routines/TrainerExerciseLibraryDialog";
+import { messageFromTemplateSaveResponse } from "@/src/app/lib/routine-template-save-errors";
 
 export default function TrainerRoutinesPage() {
   const supabase = createSupabaseBrowser();
@@ -106,7 +107,13 @@ export default function TrainerRoutinesPage() {
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data?.message ?? "No se pudo actualizar la rutina");
+        toast.error(
+          messageFromTemplateSaveResponse(
+            res,
+            data,
+            "No se pudo actualizar la rutina",
+          ),
+        );
         return;
       }
       toast.success("Rutina actualizada");
@@ -128,7 +135,13 @@ export default function TrainerRoutinesPage() {
     );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data?.message ?? "No se pudo crear la rutina");
+      toast.error(
+        messageFromTemplateSaveResponse(
+          res,
+          data,
+          "No se pudo crear la rutina",
+        ),
+      );
       return;
     }
     toast.success("Rutina creada");

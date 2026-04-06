@@ -41,13 +41,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
+import { messageFromTemplateSaveResponse } from "@/src/app/lib/routine-template-save-errors";
 import type {
   CustomExerciseForEdit,
   RoutineExercise,
   RoutineTemplate,
   RoutineTemplateExercise,
 } from "@/src/app/lib/types/routines";
-import { SafeHtml } from "@/src/app/components/routines/SafeHtml";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
 import { CustomExerciseDialog } from "@/src/app/components/routines/CustomExerciseDialog";
 
@@ -399,6 +399,10 @@ export function CustomRoutineDialog({
   const [editingTrainingValue, setEditingTrainingValue] = useState("");
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
   const [customExerciseEditorOpen, setCustomExerciseEditorOpen] =
     useState(false);
   const [editingCustomExerciseId, setEditingCustomExerciseId] = useState<
@@ -450,6 +454,7 @@ export function CustomRoutineDialog({
 
   useEffect(() => {
     if (!open) return;
+    setFormErrors({});
     setName("");
     setDescription("");
     setStartDate("");
@@ -852,10 +857,19 @@ export function CustomRoutineDialog({
   }, [selectedExercises, trainingTitles]);
 
   const handleSubmit = async () => {
-    if (!name.trim() || !description.trim()) {
-      toast.error("Completa nombre y descripción");
+    const nextErrors: { name?: string; description?: string } = {};
+    if (!name.trim()) {
+      nextErrors.name = "El nombre es obligatorio.";
+    }
+    if (!description.trim()) {
+      nextErrors.description = "La descripción es obligatoria.";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      toast.error("Revisa los campos marcados como obligatorios.");
       return;
     }
+    setFormErrors({});
     if (!startDate || !endDate) {
       toast.error("Completa las fechas de inicio y fin");
       return;
@@ -906,7 +920,13 @@ export function CustomRoutineDialog({
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data?.message ?? "No se pudo crear la rutina");
+        toast.error(
+          messageFromTemplateSaveResponse(
+            res,
+            data,
+            "No se pudo crear la rutina",
+          ),
+        );
         return;
       }
 
@@ -992,26 +1012,89 @@ export function CustomRoutineDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">
-                Nombre
+              <label
+                htmlFor="custom-routine-name"
+                className="text-xs font-medium text-gray-400"
+              >
+                Nombre{" "}
+                <span className="text-red-500" aria-hidden>
+                  *
+                </span>
               </label>
               <Input
+                id="custom-routine-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (formErrors.name)
+                    setFormErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder="Rutina Full Body A"
-                className="border-gray-700 bg-gray-800 text-gray-100"
+                required
+                aria-invalid={Boolean(formErrors.name)}
+                aria-describedby={
+                  formErrors.name ? "custom-routine-name-error" : undefined
+                }
+                className={`border-gray-700 bg-gray-800 text-gray-100 ${
+                  formErrors.name
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }`}
               />
+              {formErrors.name ? (
+                <p
+                  id="custom-routine-name-error"
+                  className="text-xs text-red-400"
+                  role="alert"
+                >
+                  {formErrors.name}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">
-                Descripción
+              <label
+                htmlFor="custom-routine-description"
+                className="text-xs font-medium text-gray-400"
+              >
+                Descripción{" "}
+                <span className="text-red-500" aria-hidden>
+                  *
+                </span>
               </label>
               <Input
+                id="custom-routine-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (formErrors.description)
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      description: undefined,
+                    }));
+                }}
                 placeholder="Objetivo y notas de esta rutina"
-                className="border-gray-700 bg-gray-800 text-gray-100"
+                required
+                aria-invalid={Boolean(formErrors.description)}
+                aria-describedby={
+                  formErrors.description
+                    ? "custom-routine-description-error"
+                    : undefined
+                }
+                className={`border-gray-700 bg-gray-800 text-gray-100 ${
+                  formErrors.description
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }`}
               />
+              {formErrors.description ? (
+                <p
+                  id="custom-routine-description-error"
+                  className="text-xs text-red-400"
+                  role="alert"
+                >
+                  {formErrors.description}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">
