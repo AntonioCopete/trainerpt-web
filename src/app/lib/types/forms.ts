@@ -297,6 +297,15 @@ export interface SendFormPayload {
 
 // --- Window helpers ---
 
+/**
+ * El backend envía `windowStart` como último instante en que el envío sigue
+ * bloqueado (p. ej. fin del día excluido en UTC, 23:59:59.999). El miembro puede
+ * abrirlo en el instante siguiente; en calendario UTC suele ser el día siguiente.
+ */
+function firstInstantAfterLockEnd(lockEnd: Date): Date {
+  return new Date(lockEnd.getTime() + 1);
+}
+
 export interface AssignmentWindowStatus {
   /** Si el assignment tiene ventana de tiempo configurada */
   hasWindow: boolean;
@@ -310,10 +319,18 @@ export interface AssignmentWindowStatus {
   statusText: string;
   /** Fecha formateada de dueAt */
   dueAtFormatted: string | null;
-  /** Fecha formateada de windowStart */
+  /**
+   * Primer día (UTC) en que el miembro ya puede abrir el formulario, para mostrar
+   * en UI (derivado de `windowStart` + 1 ms; ver semántica de lock arriba).
+   */
   windowStartFormatted: string | null;
 }
 
+/**
+ * Calcula estado de ventana temporal. `windowStart` del API = cierre del periodo
+ * bloqueado; `isBeforeWindow` usa `now < windowStart`. Los textos “Disponible desde”
+ * usan el día calendario UTC en que abre (instante posterior a `windowStart`).
+ */
 export function getAssignmentWindowStatus(assignment: {
   dueAt?: string | null;
   windowStart?: string | null;
@@ -339,6 +356,11 @@ export function getAssignmentWindowStatus(assignment: {
         })
       : null;
 
+  const windowOpensFormatted =
+    windowStart !== null
+      ? formatDate(firstInstantAfterLockEnd(windowStart))
+      : null;
+
   if (!hasWindow) {
     return {
       hasWindow: false,
@@ -359,7 +381,7 @@ export function getAssignmentWindowStatus(assignment: {
   if (isOverdue) {
     statusText = "Fecha límite pasada";
   } else if (isBeforeWindow) {
-    statusText = `Disponible desde ${formatDate(windowStart)}`;
+    statusText = `Disponible desde ${windowOpensFormatted}`;
   } else {
     statusText = `Completar antes del ${formatDate(dueAt)}`;
   }
@@ -371,8 +393,43 @@ export function getAssignmentWindowStatus(assignment: {
     isBeforeWindow,
     statusText,
     dueAtFormatted: formatDate(dueAt),
-    windowStartFormatted: formatDate(windowStart),
+    windowStartFormatted: windowOpensFormatted,
   };
+}
+
+/** Vencido o missed: el miembro ya no puede completar el envío. */
+export function isFormAssignmentNotCompleted(assignment: {
+  status?: FormAssignmentStatus;
+  dueAt?: string | null;
+  windowStart?: string | null;
+}): boolean {
+  if (assignment.status === "missed") return true;
+  if (assignment.status !== "pending") return false;
+  const ws = getAssignmentWindowStatus(assignment);
+  return ws.hasWindow && ws.isOverdue;
+}
+
+/** Pendiente y aún completable (sin límite, antes del límite o dentro de la ventana). */
+export function isFormAssignmentActionablePending(assignment: {
+  status?: FormAssignmentStatus;
+  dueAt?: string | null;
+  windowStart?: string | null;
+}): boolean {
+  if (assignment.status !== "pending") return false;
+  return !isFormAssignmentNotCompleted(assignment);
+}
+
+/**
+ * Pestaña “Pendientes” del entrenador: lo que el cliente aún puede completar
+ * más asignaciones canceladas (archived), que no encajan en vencidos ni completados.
+ */
+export function isFormAssignmentTrainerPendingTab(assignment: {
+  status?: FormAssignmentStatus;
+  dueAt?: string | null;
+  windowStart?: string | null;
+}): boolean {
+  if (assignment.status === "archived") return true;
+  return isFormAssignmentActionablePending(assignment);
 }
 
 // --- Form Response (client submission) ---

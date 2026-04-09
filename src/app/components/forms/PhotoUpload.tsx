@@ -105,7 +105,7 @@ export function PhotoUpload({
 
   const label = labelText ?? PHOTO_LABELS[photoType] ?? "Foto";
 
-  // Read-only display with image
+  // Read-only display with image (marco vertical tipo móvil; object-contain evita recortes)
   if (readOnly) {
     const hasImage = typeof value === "string" && value;
     return (
@@ -113,8 +113,10 @@ export function PhotoUpload({
         <button
           type="button"
           onClick={() => hasImage && setLightboxOpen(true)}
-          className={`relative block w-full overflow-hidden rounded-xl border border-gray-800 bg-gray-800/50 text-left transition-opacity ${
-            compact ? "aspect-square max-h-36" : "aspect-[3/4]"
+          className={`relative block w-full overflow-hidden rounded-xl border border-gray-800 bg-gray-950 text-left transition-opacity ${
+            compact
+              ? "aspect-[3/4] max-h-52 sm:max-h-60"
+              : "aspect-[3/4] max-h-[min(70vh,28rem)]"
           } ${hasImage ? "cursor-zoom-in hover:opacity-90" : "cursor-default"}`}
         >
           {hasImage ? (
@@ -122,7 +124,7 @@ export function PhotoUpload({
               <img
                 src={value}
                 alt={label}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain object-center"
               />
               <div
                 className={`absolute rounded-full bg-black/60 text-white ${compact ? "bottom-1 right-1 p-1" : "bottom-2 right-2 p-1.5"}`}

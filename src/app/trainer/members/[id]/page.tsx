@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,6 +15,8 @@ import {
   Eye,
   X,
   Calendar,
+  AlertCircle,
+  Lock,
   FolderOpen,
   // UtensilsCrossed, // reactivar con pestaña Dietas comentada abajo
   TrendingUp,
@@ -34,6 +36,8 @@ import type { MemberSummary, FormAssignment } from "@/src/app/lib/types/forms";
 import {
   formatAssignmentSentDate,
   getAssignmentWindowStatus,
+  isFormAssignmentNotCompleted,
+  isFormAssignmentTrainerPendingTab,
 } from "@/src/app/lib/types/forms";
 import { SendFormDialog } from "@/src/app/components/forms/SendFormDialog";
 import type { FormTemplate } from "@/src/app/lib/types/forms";
@@ -279,6 +283,163 @@ export default function TrainerClientDetailPage({
     };
   }, [id]);
 
+  const sortedFormAssignments = useMemo(
+    () =>
+      [...assignments].sort(
+        (a, b) =>
+          new Date(b.createdAt ?? b.sentAt ?? 0).getTime() -
+          new Date(a.createdAt ?? a.sentAt ?? 0).getTime(),
+      ),
+    [assignments],
+  );
+
+  const trainerPendingTabAssignments = useMemo(
+    () => sortedFormAssignments.filter(isFormAssignmentTrainerPendingTab),
+    [sortedFormAssignments],
+  );
+  const trainerNotCompletedAssignments = useMemo(
+    () => sortedFormAssignments.filter(isFormAssignmentNotCompleted),
+    [sortedFormAssignments],
+  );
+  const trainerCompletedAssignments = useMemo(
+    () => sortedFormAssignments.filter((a) => a.status === "completed"),
+    [sortedFormAssignments],
+  );
+
+  function renderFormAssignmentRow(assignment: FormAssignment) {
+    const sentDate = formatAssignmentSentDate(assignment);
+    const windowStatus = getAssignmentWindowStatus(assignment);
+    const notCompleted = isFormAssignmentNotCompleted(assignment);
+
+    return (
+      <div
+        key={assignment.id}
+        className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+      >
+        <div>
+          <p className="font-medium text-white">
+            {assignment.template?.name ?? "Formulario"}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+            <Clock className="h-3 w-3" />
+            Enviado el {sentDate}
+            {assignment.status === "completed" && (
+              <span className="ml-2 text-[11px] text-gray-500">
+                · Completado
+              </span>
+            )}
+          </p>
+          {(assignment.status === "pending" ||
+            assignment.status === "missed") &&
+            windowStatus.hasWindow && (
+              <p
+                className={`mt-1 flex flex-wrap items-center gap-1 text-xs ${
+                  assignment.status === "missed" || windowStatus.isOverdue
+                    ? "text-red-400"
+                    : windowStatus.isBeforeWindow
+                      ? "text-gray-400"
+                      : "text-orange-400"
+                }`}
+              >
+                <Calendar className="h-3 w-3 shrink-0" />
+                <span>
+                  {windowStatus.statusText}
+                  {windowStatus.isBeforeWindow &&
+                    windowStatus.dueAtFormatted && (
+                      <span className="text-gray-500">
+                        {" "}
+                        · límite {windowStatus.dueAtFormatted}
+                      </span>
+                    )}
+                </span>
+              </p>
+            )}
+          {(assignment.status === "completed" ||
+            assignment.status === "archived") &&
+            windowStatus.dueAtFormatted && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                <Calendar className="h-3 w-3 shrink-0" />
+                Límite: {windowStatus.dueAtFormatted}
+              </p>
+            )}
+        </div>
+        <div className="flex items-center gap-2">
+          {assignment.status === "completed" ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
+                <CheckCircle2 className="h-3 w-3" />
+                Completado
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  router.push(`/trainer/assignments/${assignment.id}`)
+                }
+                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Ver respuesta
+              </Button>
+            </>
+          ) : assignment.status === "archived" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-[11px] font-medium text-gray-300">
+              <Clock className="h-3 w-3" />
+              Cancelado
+            </span>
+          ) : notCompleted ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
+              <AlertCircle className="h-3 w-3" />
+              No completado
+            </span>
+          ) : assignment.status === "pending" && windowStatus.isBeforeWindow ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-600/25 px-2 py-0.5 text-[11px] font-medium text-gray-300">
+                <Lock className="h-3 w-3" />
+                Pendiente · aún no disponible
+              </span>
+              {assignment.repeat && assignment.repeat !== "none" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={cancellingAssignmentId === assignment.id}
+                  onClick={() => handleCancelRecurringAssignment(assignment.id)}
+                  className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  {cancellingAssignmentId === assignment.id
+                    ? "Cancelando..."
+                    : "Cancelar"}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
+                <Clock className="h-3 w-3" />
+                Pendiente
+              </span>
+              {assignment.repeat && assignment.repeat !== "none" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={cancellingAssignmentId === assignment.id}
+                  onClick={() => handleCancelRecurringAssignment(assignment.id)}
+                  className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  {cancellingAssignmentId === assignment.id
+                    ? "Cancelando..."
+                    : "Cancelar"}
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -468,112 +629,61 @@ export default function TrainerClientDetailPage({
                 Aún no has enviado ningún formulario a este miembro.
               </p>
             ) : (
-              <div className="space-y-2">
-                {assignments
-                  .slice()
-                  .sort(
-                    (a, b) =>
-                      new Date(b.createdAt ?? b.sentAt ?? 0).getTime() -
-                      new Date(a.createdAt ?? a.sentAt ?? 0).getTime(),
-                  )
-                  .map((assignment) => {
-                    const sentDate = formatAssignmentSentDate(assignment);
-                    const windowStatus = getAssignmentWindowStatus(assignment);
-
-                    return (
-                      <div
-                        key={assignment.id}
-                        className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
-                      >
-                        <div>
-                          <p className="font-medium text-white">
-                            {assignment.template?.name ?? "Formulario"}
-                          </p>
-                          <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-                            <Clock className="h-3 w-3" />
-                            Enviado el {sentDate}
-                            {assignment.status === "completed" && (
-                              <span className="ml-2 text-[11px] text-gray-500">
-                                · Completado
-                              </span>
-                            )}
-                          </p>
-                          {windowStatus.dueAtFormatted && (
-                            <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                              <Calendar className="h-3 w-3" />
-                              Límite: {windowStatus.dueAtFormatted}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {assignment.status === "completed" ? (
-                            <>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Completado
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  router.push(
-                                    `/trainer/assignments/${assignment.id}`,
-                                  )
-                                }
-                                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Ver respuesta
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              {assignment.status === "archived" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-[11px] font-medium text-gray-300">
-                                  <Clock className="h-3 w-3" />
-                                  Cancelado
-                                </span>
-                              ) : assignment.status === "missed" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
-                                  <Clock className="h-3 w-3" />
-                                  Vencido
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-400">
-                                  <Clock className="h-3 w-3" />
-                                  Pendiente
-                                </span>
-                              )}
-
-                              {assignment.status === "pending" &&
-                                assignment.repeat &&
-                                assignment.repeat !== "none" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={
-                                      cancellingAssignmentId === assignment.id
-                                    }
-                                    onClick={() =>
-                                      handleCancelRecurringAssignment(
-                                        assignment.id,
-                                      )
-                                    }
-                                    className="gap-1 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                    {cancellingAssignmentId === assignment.id
-                                      ? "Cancelando..."
-                                      : "Cancelar"}
-                                  </Button>
-                                )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
+              <Tabs defaultValue="pending" className="w-full">
+                <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1">
+                  <TabsTrigger
+                    value="pending"
+                    className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
+                  >
+                    Pendientes
+                    {trainerPendingTabAssignments.length > 0 && (
+                      <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-[10px] font-bold text-orange-400">
+                        {trainerPendingTabAssignments.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="notCompleted"
+                    className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
+                  >
+                    No completados
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="completed"
+                    className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
+                  >
+                    Completados
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="pending" className="mt-0 space-y-2">
+                  {trainerPendingTabAssignments.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No hay formularios pendientes de completar (ni
+                      cancelados).
+                    </p>
+                  ) : (
+                    trainerPendingTabAssignments.map(renderFormAssignmentRow)
+                  )}
+                </TabsContent>
+                <TabsContent value="notCompleted" className="mt-0 space-y-2">
+                  {trainerNotCompletedAssignments.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No hay envíos vencidos sin completar.
+                    </p>
+                  ) : (
+                    trainerNotCompletedAssignments.map(renderFormAssignmentRow)
+                  )}
+                </TabsContent>
+                <TabsContent value="completed" className="mt-0 space-y-2">
+                  {trainerCompletedAssignments.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Aún no hay formularios completados.
+                    </p>
+                  ) : (
+                    trainerCompletedAssignments.map(renderFormAssignmentRow)
+                  )}
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </TabsContent>

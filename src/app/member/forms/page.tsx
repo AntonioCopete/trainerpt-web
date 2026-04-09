@@ -21,12 +21,17 @@ import type { FormAssignment } from "../../lib/types/forms";
 import {
   formatAssignmentSentDate,
   getAssignmentWindowStatus,
+  isFormAssignmentActionablePending,
+  isFormAssignmentNotCompleted,
   REPEAT_LABELS,
 } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 
 export default function ClientFormsPage() {
-  const [pending, setPending] = useState<FormAssignment[]>([]);
+  const [actionablePending, setActionablePending] = useState<FormAssignment[]>(
+    [],
+  );
+  const [notCompleted, setNotCompleted] = useState<FormAssignment[]>([]);
   const [completed, setCompleted] = useState<FormAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createSupabaseBrowser();
@@ -45,17 +50,20 @@ export default function ClientFormsPage() {
       );
       const data = await res.json();
       const list: FormAssignment[] = data.assignments ?? data ?? [];
-      setPending(
-        list.filter(
-          (a: FormAssignment) =>
-            a.status === "pending" || a.status === "missed",
+      setActionablePending(
+        list.filter((a: FormAssignment) =>
+          isFormAssignmentActionablePending(a),
         ),
+      );
+      setNotCompleted(
+        list.filter((a: FormAssignment) => isFormAssignmentNotCompleted(a)),
       );
       setCompleted(
         list.filter((a: FormAssignment) => a.status === "completed"),
       );
     } catch {
-      setPending([]);
+      setActionablePending([]);
+      setNotCompleted([]);
       setCompleted([]);
     } finally {
       setLoading(false);
@@ -295,17 +303,23 @@ export default function ClientFormsPage() {
         </div>
       ) : (
         <Tabs defaultValue="pending">
-          <TabsList className="bg-gray-900 border border-gray-800 rounded-xl p-1">
+          <TabsList className="flex h-auto min-h-10 w-full flex-wrap gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
             <TabsTrigger
               value="pending"
               className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
             >
               Pendientes
-              {pending.length > 0 && (
+              {actionablePending.length > 0 && (
                 <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {pending.length}
+                  {actionablePending.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="notCompleted"
+              className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
+            >
+              No completados
             </TabsTrigger>
             <TabsTrigger
               value="completed"
@@ -316,14 +330,28 @@ export default function ClientFormsPage() {
           </TabsList>
 
           <TabsContent value="pending" className="mt-4">
-            {pending.length === 0 ? (
+            {actionablePending.length === 0 ? (
               renderEmptyState(
                 "No tienes formularios pendientes. Tu entrenador te enviará uno pronto.",
               )
             ) : (
               <div className="space-y-3">
                 <AnimatePresence>
-                  {pending.map((a, i) => renderAssignment(a, i, true))}
+                  {actionablePending.map((a, i) =>
+                    renderAssignment(a, i, true),
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="notCompleted" className="mt-4">
+            {notCompleted.length === 0 ? (
+              renderEmptyState("No tienes formularios vencidos sin completar.")
+            ) : (
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {notCompleted.map((a, i) => renderAssignment(a, i, true))}
                 </AnimatePresence>
               </div>
             )}
