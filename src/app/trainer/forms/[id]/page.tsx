@@ -13,6 +13,8 @@ import {
   Eye,
   Archive,
   Calendar,
+  Lock,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,7 @@ import type {
 import {
   formatAssignmentSentDate,
   getAssignmentWindowStatus,
+  isFormAssignmentNotCompleted,
 } from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import { toast } from "sonner";
@@ -241,12 +244,40 @@ export default function TemplateDetailPage({
                             <p className="text-xs text-gray-500">
                               Enviado el {date}
                             </p>
-                            {windowStatus.dueAtFormatted && (
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                <Calendar className="h-3 w-3" />
-                                Límite: {windowStatus.dueAtFormatted}
-                              </p>
-                            )}
+                            {(assignment.status === "pending" ||
+                              assignment.status === "missed") &&
+                              windowStatus.hasWindow && (
+                                <p
+                                  className={`mt-1 flex flex-wrap items-center gap-1 text-xs ${
+                                    assignment.status === "missed" ||
+                                    windowStatus.isOverdue
+                                      ? "text-red-400"
+                                      : windowStatus.isBeforeWindow
+                                        ? "text-gray-400"
+                                        : "text-orange-400"
+                                  }`}
+                                >
+                                  <Calendar className="h-3 w-3 shrink-0" />
+                                  <span>
+                                    {windowStatus.statusText}
+                                    {windowStatus.isBeforeWindow &&
+                                      windowStatus.dueAtFormatted && (
+                                        <span className="text-gray-500">
+                                          {" "}
+                                          · límite {windowStatus.dueAtFormatted}
+                                        </span>
+                                      )}
+                                  </span>
+                                </p>
+                              )}
+                            {(assignment.status === "completed" ||
+                              assignment.status === "archived") &&
+                              windowStatus.dueAtFormatted && (
+                                <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                  <Calendar className="h-3 w-3 shrink-0" />
+                                  Límite: {windowStatus.dueAtFormatted}
+                                </p>
+                              )}
                           </div>
                         </div>
 
@@ -282,13 +313,22 @@ export default function TemplateDetailPage({
                               <Clock className="mr-1 h-3 w-3" />
                               Cancelado
                             </Badge>
-                          ) : assignment.status === "missed" ? (
+                          ) : isFormAssignmentNotCompleted(assignment) ? (
                             <Badge
                               variant="secondary"
                               className="border-0 bg-red-500/10 text-red-400 text-xs"
                             >
-                              <Clock className="mr-1 h-3 w-3" />
-                              Vencido
+                              <AlertCircle className="mr-1 h-3 w-3" />
+                              No completado
+                            </Badge>
+                          ) : assignment.status === "pending" &&
+                            windowStatus.isBeforeWindow ? (
+                            <Badge
+                              variant="secondary"
+                              className="border-0 bg-gray-600/25 text-gray-300 text-xs"
+                            >
+                              <Lock className="mr-1 h-3 w-3" />
+                              Pendiente · aún no disponible
                             </Badge>
                           ) : (
                             <Badge
