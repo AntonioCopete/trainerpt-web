@@ -241,10 +241,10 @@ export default function OnboardingPageComponent({
                       </div>
                       <h3 className="text-xl font-bold mb-2">Entrenador</h3>
                       <p className="text-gray-400 text-sm leading-relaxed">
-                        Gestiona clientes, crea rutinas personalizadas, diseña
-                        planes de nutrición y haz crecer tu negocio fitness.
+                        Gestiona clientes, crea rutinas personalizadas y haz
+                        crecer tu negocio fitness.
                       </p>
-                      <ul className="mt-4 space-y-2">
+                      {/* <ul className="mt-4 space-y-2">
                         {[
                           "Gestión de clientes",
                           "Creador de rutinas con IA",
@@ -265,7 +265,7 @@ export default function OnboardingPageComponent({
                             {feature}
                           </li>
                         ))}
-                      </ul>
+                      </ul> */}
                     </motion.button>
 
                     {/* Client Card */}
@@ -299,10 +299,10 @@ export default function OnboardingPageComponent({
                       </div>
                       <h3 className="text-xl font-bold mb-2">Cliente</h3>
                       <p className="text-gray-400 text-sm leading-relaxed">
-                        Accede a tus rutinas, planes de nutrición y sigue tu
-                        progreso con tu entrenador personal.
+                        Accede a tus rutinas y sigue tu progreso con tu
+                        entrenador personal.
                       </p>
-                      <ul className="mt-4 space-y-2">
+                      {/* <ul className="mt-4 space-y-2">
                         {[
                           "Ver rutinas asignadas",
                           "Seguimiento de progreso",
@@ -323,7 +323,7 @@ export default function OnboardingPageComponent({
                             {feature}
                           </li>
                         ))}
-                      </ul>
+                      </ul> */}
                     </motion.button>
                   </div>
                 </motion.div>
