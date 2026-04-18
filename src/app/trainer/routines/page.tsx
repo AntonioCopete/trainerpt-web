@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   ArchiveRestore,
   CalendarRange,
@@ -214,12 +213,6 @@ export default function TrainerRoutinesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/trainer/routines/assignments"
-            className="inline-flex h-10 items-center rounded-md border border-gray-700 bg-transparent px-4 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-          >
-            Ver asignadas
-          </Link>
           <Button
             variant="outline"
             onClick={() => setExerciseLibraryOpen(true)}

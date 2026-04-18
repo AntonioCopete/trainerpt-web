@@ -21,7 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PhotoUpload } from "../../../components/forms/PhotoUpload";
 import type { FormAssignment, CustomField } from "../../../lib/types/forms";
-import { getAssignmentWindowStatus } from "../../../lib/types/forms";
+import {
+  getAssignmentWindowStatus,
+  photoTypeForFieldId,
+} from "../../../lib/types/forms";
 import { createSupabaseBrowser } from "../../../lib/supabase/browser";
 import { uploadPhotoWithPresignedUrl } from "../../../lib/forms-upload";
 
@@ -472,7 +475,7 @@ export default function FillFormPage({
                 Fotos
               </h3>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {photoFields
                 .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
                 .map((field) => (
@@ -484,7 +487,7 @@ export default function FillFormPage({
                       )}
                     </Label>
                     <PhotoUpload
-                      photoType="front"
+                      photoType={photoTypeForFieldId(field.id)}
                       value={photos[field.id] ?? null}
                       onChange={(file) => updatePhoto(field.id, file)}
                       showLabel={false}

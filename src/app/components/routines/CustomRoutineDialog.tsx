@@ -1208,7 +1208,7 @@ export function CustomRoutineDialog({
         open={manageExercisesDialogOpen}
         onOpenChange={setManageExercisesDialogOpen}
       >
-        <DialogContent className="max-h-[90vh] overflow-auto border-gray-800 bg-gray-900 p-5 text-white sm:max-w-3xl">
+        <DialogContent className="max-h-[90vh] w-full min-w-0 overflow-y-auto overflow-x-hidden border-gray-800 bg-gray-900 p-5 text-white sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Gestionar ejercicios</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -1219,9 +1219,9 @@ export function CustomRoutineDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             {/* Ejercicios actuales del entrenamiento */}
-            <div className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
+            <div className="min-w-0 rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-xs font-semibold uppercase tracking-wide text-orange-300">
                   Ejercicios en {currentTrainingTitle}
@@ -1298,7 +1298,7 @@ export function CustomRoutineDialog({
               </div>
             </div>
 
-            <div className="max-h-96 space-y-2 overflow-auto rounded-lg border border-gray-800 bg-gray-800/30 p-2">
+            <div className="max-h-96 min-w-0 space-y-2 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-800 bg-gray-800/30 p-2">
               {loadingExercises ? (
                 <p className="px-2 py-1 text-xs text-gray-500">Cargando...</p>
               ) : exerciseResults.length === 0 ? (
@@ -1323,11 +1323,11 @@ export function CustomRoutineDialog({
                       : getMuscleNames(exercise.musclesSecondary)
                   ).slice(0, 3);
                   return (
-                    <div key={exercise.id} className="space-y-1">
-                      <div className="flex items-center gap-3 rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2.5">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 w-full items-center gap-2">
-                            <p className="min-w-0 shrink truncate text-base font-semibold leading-snug text-white">
+                    <div key={exercise.id} className="min-w-0 space-y-1">
+                      <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md border border-gray-700 bg-gray-900/60 px-2 py-2.5 sm:gap-3 sm:px-3">
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                            <p className="min-w-0 flex-1 truncate text-base font-semibold leading-snug text-white">
                               {exercise.name}
                             </p>
                             <span

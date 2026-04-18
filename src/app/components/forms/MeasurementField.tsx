@@ -14,16 +14,9 @@ import {
   type MandatoryKey,
 } from "../../lib/types/forms";
 
-/** Permite solo dígitos y un separador decimal (. o ,); peso máx 2 decimales, edad entero */
-function normalizeNumericInput(raw: string, key: MandatoryKey): string | null {
-  if (key === "weight") {
-    if (!/^\d*[.,]?\d{0,2}$/.test(raw)) return null;
-    return raw;
-  }
-  if (key === "age") {
-    if (!/^\d*$/.test(raw)) return null;
-    return raw;
-  }
+/** Peso: dígitos y separador decimal (. o ,), máx 2 decimales */
+function normalizeWeightInput(raw: string): string | null {
+  if (!/^\d*[.,]?\d{0,2}$/.test(raw)) return null;
   return raw;
 }
 
@@ -60,21 +53,16 @@ export function MeasurementFields({
   const handleBasicChange = useCallback(
     (key: MandatoryKey, raw: string) => {
       const trimmed = raw.trim();
-      const normalized = normalizeNumericInput(trimmed, key);
+      const normalized = normalizeWeightInput(trimmed);
       if (normalized === null) return;
       setDraft((prev) => ({ ...prev, [key]: normalized }));
       if (trimmed === "") {
         onChange?.(key, undefined);
         return;
       }
-      if (key === "weight") {
-        if (trimmed.endsWith(".") || trimmed.endsWith(",")) return;
-        const n = Number.parseFloat(trimmed.replace(",", "."));
-        if (!Number.isNaN(n)) onChange?.(key, Math.round(n * 100) / 100);
-      } else {
-        const n = Number.parseInt(trimmed, 10);
-        if (!Number.isNaN(n) && n >= 0) onChange?.(key, n);
-      }
+      if (trimmed.endsWith(".") || trimmed.endsWith(",")) return;
+      const n = Number.parseFloat(trimmed.replace(",", "."));
+      if (!Number.isNaN(n)) onChange?.(key, Math.round(n * 100) / 100);
     },
     [onChange],
   );
@@ -89,13 +77,8 @@ export function MeasurementFields({
         return next;
       });
       if (current === "") return;
-      if (key === "weight") {
-        const n = Number.parseFloat(current.replace(",", "."));
-        if (!Number.isNaN(n)) onChange?.(key, Math.round(n * 100) / 100);
-      } else {
-        const n = Number.parseInt(current, 10);
-        if (!Number.isNaN(n) && n >= 0) onChange?.(key, n);
-      }
+      const n = Number.parseFloat(current.replace(",", "."));
+      if (!Number.isNaN(n)) onChange?.(key, Math.round(n * 100) / 100);
     },
     [draft, values, onChange],
   );
@@ -179,7 +162,7 @@ export function MeasurementFields({
                     <Input
                       id={`basic-${key}`}
                       type="text"
-                      inputMode={key === "age" ? "numeric" : "decimal"}
+                      inputMode="decimal"
                       placeholder="—"
                       value={displayBasic(key)}
                       onChange={(e) => handleBasicChange(key, e.target.value)}
