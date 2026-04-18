@@ -19,6 +19,8 @@ import {
   FolderOpen,
   // UtensilsCrossed, // reactivar con pestaña Dietas comentada abajo
   TrendingUp,
+  Archive,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -102,6 +104,12 @@ export default function TrainerClientDetailPage({
     useState(false);
   const [routineExerciseDetail, setRoutineExerciseDetail] =
     useState<RoutineTemplateExercise | null>(null);
+  const [routineToArchiveId, setRoutineToArchiveId] = useState<string | null>(
+    null,
+  );
+  const [archivingRoutineId, setArchivingRoutineId] = useState<string | null>(
+    null,
+  );
   const supabase = createSupabaseBrowser();
 
   const toggleRoutineHistoryExpanded = (assignmentId: string) => {
@@ -159,6 +167,49 @@ export default function TrainerClientDetailPage({
       setRoutineAssignments(list);
     } else {
       setRoutineAssignments([]);
+    }
+  };
+
+  const handleConfirmArchiveRoutine = async () => {
+    if (!routineToArchiveId) return;
+    setArchivingRoutineId(routineToArchiveId);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      if (!token) throw new Error("Sesión expirada");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/assignments/${routineToArchiveId}/archive`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = "No se pudo archivar la asignación.";
+        try {
+          const j = JSON.parse(text) as { message?: string };
+          if (j.message) msg = j.message;
+        } catch {
+          if (text) msg = text.slice(0, 200);
+        }
+        throw new Error(msg);
+      }
+
+      toast.success("Asignación archivada");
+      setRoutineToArchiveId(null);
+      setExpandedRoutineHistoryIds((prev) => {
+        const next = new Set(prev);
+        next.delete(routineToArchiveId);
+        return next;
+      });
+      await refreshRoutineAssignments();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al archivar");
+    } finally {
+      setArchivingRoutineId(null);
     }
   };
 
@@ -325,6 +376,16 @@ export default function TrainerClientDetailPage({
   const trainerPendingTabAssignments = useMemo(
     () => sortedFormAssignments.filter(isFormAssignmentTrainerPendingTab),
     [sortedFormAssignments],
+  );
+
+  /** Historial del trainer: no listar cancelaciones (archivadas) para mantener la vista limpia. */
+  const visibleRoutineAssignmentsForHistory = useMemo(
+    () =>
+      routineAssignments.filter((a) => {
+        const s = a.computedStatus ?? a.status;
+        return s !== "archived";
+      }),
+    [routineAssignments],
   );
   const trainerNotCompletedAssignments = useMemo(
     () => sortedFormAssignments.filter(isFormAssignmentNotCompleted),
@@ -568,6 +629,50 @@ export default function TrainerClientDetailPage({
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={routineToArchiveId !== null}
+        onOpenChange={(open) => {
+          if (!open) setRoutineToArchiveId(null);
+        }}
+      >
+        <DialogContent className="border-gray-800 bg-gray-900 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Archivar asignación de rutina
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              El cliente dejará de ver esta rutina como vigente. Podrás asignar
+              otra en el mismo periodo después de archivar. Esta acción no se
+              puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRoutineToArchiveId(null)}
+              className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+              disabled={archivingRoutineId !== null}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => void handleConfirmArchiveRoutine()}
+              disabled={archivingRoutineId !== null}
+              className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+            >
+              {archivingRoutineId ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Archivando…
+                </>
+              ) : (
+                "Archivar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="forms" className="w-full">
         <TabsList className="mb-2 flex h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex-row sm:flex-wrap sm:gap-1">
           <TabsTrigger
@@ -787,14 +892,15 @@ export default function TrainerClientDetailPage({
                 Nueva rutina personalizada
               </Button>
             </div>
-            {routineAssignments.length === 0 ? (
+            {visibleRoutineAssignmentsForHistory.length === 0 ? (
               <p className="text-sm text-gray-500">
                 Aún no has asignado ninguna rutina a este member.
               </p>
             ) : (
               <div className="space-y-3">
-                {routineAssignments.map((assignment) => {
+                {visibleRoutineAssignmentsForHistory.map((assignment) => {
                   const status = assignment.computedStatus || assignment.status;
+                  const isArchived = status === "archived";
                   const isExpanded = expandedRoutineHistoryIds.has(
                     assignment.id,
                   );
@@ -842,18 +948,37 @@ export default function TrainerClientDetailPage({
                             {formatRoutineDate(assignment.endDate)}
                           </p>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                           <Badge
                             variant="secondary"
                             className={`border-0 ${ROUTINE_STATUS_BADGE_CLASS[status]}`}
                           >
                             {ROUTINE_STATUS_LABELS[status]}
                           </Badge>
+                          {!isArchived && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-400 hover:bg-gray-800 hover:text-orange-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRoutineToArchiveId(assignment.id);
+                              }}
+                            >
+                              <Archive className="mr-1 h-3.5 w-3.5" />
+                              Archivar
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             className="text-gray-400 hover:bg-gray-800 hover:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleRoutineHistoryExpanded(assignment.id);
+                            }}
                           >
                             {isExpanded ? "Ocultar" : "Ver detalles"}
                           </Button>

@@ -78,8 +78,14 @@ export default function MemberRoutinesPage() {
   }, [fetchRoutines]);
 
   const historyWithoutActive = useMemo(() => {
-    if (!activeAssignment) return history;
-    return history.filter((item) => item.id !== activeAssignment.id);
+    const notActive = !activeAssignment
+      ? history
+      : history.filter((item) => item.id !== activeAssignment.id);
+    // Ocultar asignaciones archivadas por el entrenador (canceladas).
+    return notActive.filter((item) => {
+      const s = item.computedStatus ?? item.status;
+      return s !== "archived";
+    });
   }, [history, activeAssignment]);
 
   const groupedExercises = useMemo(() => {
