@@ -19,7 +19,7 @@ export interface PresignedUploadUrlResult {
 export async function uploadPhotoWithPresignedUrl(opts: {
   assignmentId: string;
   file: File;
-  /** Nombre del archivo para el DTO (ej: "front", "side", "custom_fieldId") */
+  /** Nombre del archivo para el DTO (ej: "front", "side", "back", "custom_fieldId") */
   filename: string;
   token: string;
 }): Promise<string> {

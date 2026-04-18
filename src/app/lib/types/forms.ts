@@ -43,30 +43,40 @@ export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
 
 // --- Mandatory basic data keys (always required) ---
 
-export const MANDATORY_BASICS = ["weight", "age"] as const;
+export const MANDATORY_BASICS = ["weight"] as const;
 export type BasicKey = (typeof MANDATORY_BASICS)[number];
 
 export const BASIC_LABELS: Record<BasicKey, string> = {
   weight: "Peso",
-  age: "Edad",
 };
 
 export const BASIC_UNITS: Record<BasicKey, string> = {
   weight: "kg",
-  age: "años",
 };
 
 export type MandatoryKey = BasicKey | MeasurementKey;
 
 // --- Mandatory photo types ---
 
-export const MANDATORY_PHOTOS = ["front", "side"] as const;
+export const MANDATORY_PHOTOS = ["front", "side", "back"] as const;
 export type PhotoType = (typeof MANDATORY_PHOTOS)[number];
 
 export const PHOTO_LABELS: Record<PhotoType, string> = {
   front: "Foto frontal",
   side: "Foto lateral",
+  back: "Foto de espalda",
 };
+
+/**
+ * Iconografía / etiqueta por defecto en `PhotoUpload` según id estable del campo.
+ * Campos foto personalizados (otro id) usan el fallback `front`.
+ */
+export function photoTypeForFieldId(fieldId: string): PhotoType {
+  if ((MANDATORY_PHOTOS as readonly string[]).includes(fieldId)) {
+    return fieldId as PhotoType;
+  }
+  return "front";
+}
 
 // --- Default fields for new templates ---
 
@@ -81,20 +91,12 @@ export function getDefaultTemplateFields(): CustomField[] {
       order: 0,
     },
     {
-      id: "age",
-      type: "number",
-      label: "Edad",
-      unit: "años",
-      required: true,
-      order: 1,
-    },
-    {
       id: "shoulders",
       type: "number",
       label: "Hombros",
       unit: "cm",
       required: true,
-      order: 2,
+      order: 1,
     },
     {
       id: "chest",
@@ -102,7 +104,7 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Pecho",
       unit: "cm",
       required: true,
-      order: 3,
+      order: 2,
     },
     {
       id: "biceps",
@@ -110,7 +112,7 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Bíceps",
       unit: "cm",
       required: true,
-      order: 4,
+      order: 3,
     },
     {
       id: "waist",
@@ -118,7 +120,7 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Cintura",
       unit: "cm",
       required: true,
-      order: 5,
+      order: 4,
     },
     {
       id: "hips",
@@ -126,7 +128,7 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Cadera",
       unit: "cm",
       required: true,
-      order: 6,
+      order: 5,
     },
     {
       id: "quadriceps",
@@ -134,7 +136,7 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Cuádriceps",
       unit: "cm",
       required: true,
-      order: 7,
+      order: 6,
     },
     {
       id: "calves",
@@ -142,19 +144,26 @@ export function getDefaultTemplateFields(): CustomField[] {
       label: "Gemelos",
       unit: "cm",
       required: true,
-      order: 8,
+      order: 7,
     },
     {
       id: "front",
       type: "photo",
       label: "Foto frontal",
       required: true,
-      order: 9,
+      order: 8,
     },
     {
       id: "side",
       type: "photo",
       label: "Foto lateral",
+      required: true,
+      order: 9,
+    },
+    {
+      id: "back",
+      type: "photo",
+      label: "Foto de espalda",
       required: true,
       order: 10,
     },
@@ -437,8 +446,6 @@ export function isFormAssignmentTrainerPendingTab(assignment: {
 export interface MeasurementData {
   /** kg */
   weight: number;
-  /** years */
-  age: number;
   shoulders: number;
   chest: number;
   biceps: number;
@@ -451,6 +458,7 @@ export interface MeasurementData {
 export interface PhotoData {
   front: string; // URL or base64
   side: string;
+  back: string;
 }
 
 export interface CustomFieldValue {
@@ -476,6 +484,7 @@ export interface SubmitFormPayload {
   photos: {
     front: File | null;
     side: File | null;
+    back: File | null;
   };
   customFieldValues: CustomFieldValue[];
 }

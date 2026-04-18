@@ -2,6 +2,7 @@
 
 import { Calendar, User, Ruler, Camera, Type } from "lucide-react";
 import type { CustomField } from "../../lib/types/forms";
+import { photoTypeForFieldId } from "../../lib/types/forms";
 import { PhotoUpload } from "./PhotoUpload";
 
 interface ResponseViewerProps {
@@ -99,7 +100,7 @@ export function ResponseViewer({
               Fotos
             </h3>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {photoFields
               .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
               .map((field) => {
@@ -108,7 +109,7 @@ export function ResponseViewer({
                   <div key={field.id} className="space-y-1.5">
                     <p className="text-xs text-gray-400">{field.label}</p>
                     <PhotoUpload
-                      photoType="front"
+                      photoType={photoTypeForFieldId(field.id)}
                       value={url}
                       readOnly
                       compact

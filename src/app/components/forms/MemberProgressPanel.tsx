@@ -17,6 +17,7 @@ import {
   type MemberProgressPayload,
 } from "@/src/app/lib/member-progress-api";
 import { getPresignedPhotoUrlsBatch } from "@/src/app/lib/forms-upload";
+import { photoTypeForFieldId } from "@/src/app/lib/types/forms";
 import { PhotoUpload } from "./PhotoUpload";
 import {
   Select,
@@ -314,7 +315,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
                     return (
                       <PhotoUpload
                         key={`${point.submittedAt}-${pf.id}-${url || "pending"}`}
-                        photoType="front"
+                        photoType={photoTypeForFieldId(pf.id)}
                         value={url}
                         readOnly
                         compact
