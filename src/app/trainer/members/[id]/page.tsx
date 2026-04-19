@@ -413,9 +413,9 @@ export default function TrainerClientDetailPage({
     return (
       <div
         key={assignment.id}
-        className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+        className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
+        <div className="min-w-0">
           <p className="font-medium text-white">
             {assignment.template?.name ?? "Formulario"}
           </p>
@@ -462,7 +462,7 @@ export default function TrainerClientDetailPage({
               </p>
             )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {assignment.status === "completed" ? (
             <>
               <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
@@ -475,7 +475,7 @@ export default function TrainerClientDetailPage({
                 onClick={() =>
                   router.push(`/trainer/assignments/${assignment.id}`)
                 }
-                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="h-8 gap-1 px-2 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Ver respuesta
@@ -495,7 +495,7 @@ export default function TrainerClientDetailPage({
             <>
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-600/25 px-2 py-0.5 text-[11px] font-medium text-gray-300">
                 <Lock className="h-3 w-3" />
-                Pendiente · aún no disponible
+                Pendiente
               </span>
               {assignment.repeat && assignment.repeat !== "none" && (
                 <Button
@@ -567,7 +567,7 @@ export default function TrainerClientDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
             onClick={() => router.push("/trainer/members")}
@@ -575,26 +575,26 @@ export default function TrainerClientDetailPage({
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20">
               <User className="h-7 w-7 text-red-400" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-bold text-white">
                 {member.fullName || "Sin nombre"}
               </h1>
               <p className="mt-1 flex items-center gap-2 text-sm text-gray-400">
-                <Mail className="h-4 w-4" />
-                {member.email}
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="truncate">{member.email}</span>
               </p>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-start sm:ml-auto">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={unlinkingMember}
                 onClick={handleUnlinkMember}
-                className="gap-1 border-red-500/30 bg-transparent text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                className="h-9 gap-1 border-red-500/30 bg-transparent px-3 text-red-400 hover:bg-red-500/10 hover:text-red-300"
               >
                 <X className="h-4 w-4" />
                 {unlinkingMember ? "Desvinculando..." : "Desvincular"}
