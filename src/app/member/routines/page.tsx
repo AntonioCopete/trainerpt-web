@@ -12,6 +12,8 @@ import type {
 } from "@/src/app/lib/types/routines";
 import {
   formatRoutineDate,
+  routineAssignmentDisplayDescription,
+  routineAssignmentDisplayName,
   ROUTINE_STATUS_LABELS,
 } from "@/src/app/lib/types/routines";
 
@@ -147,10 +149,10 @@ export default function MemberRoutinesPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-white">
-                {activeAssignment.template?.name ?? "Rutina"}
+                {routineAssignmentDisplayName(activeAssignment)}
               </p>
               <p className="mt-1 text-sm text-gray-300">
-                {activeAssignment.template?.description ?? "Sin descripcion"}
+                {routineAssignmentDisplayDescription(activeAssignment)}
               </p>
             </div>
             <Badge
@@ -292,7 +294,7 @@ export default function MemberRoutinesPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-white">
-                      {assignment.template?.name ?? "Rutina"}
+                      {routineAssignmentDisplayName(assignment)}
                     </p>
                     <p className="text-xs text-gray-400">
                       {formatRoutineDate(assignment.startDate)} -{" "}

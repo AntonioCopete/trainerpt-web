@@ -22,6 +22,12 @@ export interface RoutineAssignment {
   memberId: string;
   templateId?: string | null;
   template?: Pick<RoutineTemplate, "id" | "name" | "description"> | null;
+  /**
+   * Rutina asignada sin plantilla (`/routines/assignments/custom`): el backend
+   * envía nombre y descripción en la raíz de la asignación, no en `template`.
+   */
+  name?: string | null;
+  description?: string | null;
   member?: {
     id: string;
     fullName: string | null;
@@ -34,6 +40,26 @@ export interface RoutineAssignment {
   computedStatus?: RoutineAssignmentStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export function routineAssignmentDisplayName(
+  assignment: RoutineAssignment,
+): string {
+  const fromTemplate = assignment.template?.name?.trim();
+  if (fromTemplate) return fromTemplate;
+  const fromRoot = assignment.name?.trim();
+  if (fromRoot) return fromRoot;
+  return "Rutina";
+}
+
+export function routineAssignmentDisplayDescription(
+  assignment: RoutineAssignment,
+): string {
+  const fromTemplate = assignment.template?.description?.trim();
+  if (fromTemplate) return fromTemplate;
+  const fromRoot = assignment.description?.trim();
+  if (fromRoot) return fromRoot;
+  return "Sin descripción";
 }
 
 export interface CreateRoutineTemplatePayload {

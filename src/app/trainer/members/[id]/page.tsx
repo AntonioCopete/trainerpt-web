@@ -58,6 +58,8 @@ import type {
 } from "@/src/app/lib/types/routines";
 import {
   formatRoutineDate,
+  routineAssignmentDisplayDescription,
+  routineAssignmentDisplayName,
   ROUTINE_STATUS_LABELS,
 } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
@@ -995,7 +997,7 @@ export default function TrainerClientDetailPage({
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-white">
-                            {assignment.template?.name ?? "Rutina"}
+                            {routineAssignmentDisplayName(assignment)}
                           </p>
                           <p className="text-xs text-gray-400">
                             {formatRoutineDate(assignment.startDate)} -{" "}
@@ -1041,9 +1043,10 @@ export default function TrainerClientDetailPage({
 
                       {isExpanded && (
                         <div className="mt-4">
-                          {assignment.template?.description && (
+                          {(assignment.template?.description?.trim() ||
+                            assignment.description?.trim()) && (
                             <p className="mb-3 text-sm text-gray-300">
-                              {assignment.template.description}
+                              {routineAssignmentDisplayDescription(assignment)}
                             </p>
                           )}
 
