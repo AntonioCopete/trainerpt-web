@@ -17,6 +17,13 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { FormAssignment } from "../../lib/types/forms";
 import {
   formatAssignmentSentDate,
@@ -28,6 +35,7 @@ import {
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 
 export default function ClientFormsPage() {
+  const [activeTab, setActiveTab] = useState("pending");
   const [actionablePending, setActionablePending] = useState<FormAssignment[]>(
     [],
   );
@@ -302,8 +310,26 @@ export default function ClientFormsPage() {
           ))}
         </div>
       ) : (
-        <Tabs defaultValue="pending">
-          <TabsList className="flex h-auto min-h-10 w-full flex-wrap gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="sm:hidden">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full rounded-xl border-gray-800 bg-gray-900 text-white">
+                <SelectValue placeholder="Seleccionar sección" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">
+                  Pendientes
+                  {actionablePending.length > 0
+                    ? ` (${actionablePending.length})`
+                    : ""}
+                </SelectItem>
+                <SelectItem value="notCompleted">No completados</SelectItem>
+                <SelectItem value="completed">Completados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TabsList className="hidden h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1 sm:flex">
             <TabsTrigger
               value="pending"
               className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"

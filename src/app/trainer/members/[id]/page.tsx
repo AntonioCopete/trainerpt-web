@@ -26,6 +26,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -75,6 +82,8 @@ export default function TrainerClientDetailPage({
   const router = useRouter();
   const [member, setMember] = useState<MemberSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeMainTab, setActiveMainTab] = useState("forms");
+  const [activeFormsHistoryTab, setActiveFormsHistoryTab] = useState("pending");
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [routineTemplates, setRoutineTemplates] = useState<RoutineTemplate[]>(
@@ -673,8 +682,26 @@ export default function TrainerClientDetailPage({
         </DialogContent>
       </Dialog>
 
-      <Tabs defaultValue="forms" className="w-full">
-        <TabsList className="mb-2 flex h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex-row sm:flex-wrap sm:gap-1">
+      <Tabs
+        value={activeMainTab}
+        onValueChange={setActiveMainTab}
+        className="w-full"
+      >
+        <div className="mb-2 sm:hidden">
+          <Select value={activeMainTab} onValueChange={setActiveMainTab}>
+            <SelectTrigger className="w-full rounded-xl border-gray-800 bg-gray-900/80 text-white">
+              <SelectValue placeholder="Seleccionar sección" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="forms">Formularios</SelectItem>
+              <SelectItem value="progress">Progreso</SelectItem>
+              <SelectItem value="routines">Rutinas</SelectItem>
+              <SelectItem value="resources">Recursos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <TabsList className="mb-2 hidden h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex sm:flex-row sm:flex-wrap sm:gap-1">
           <TabsTrigger
             value="forms"
             className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
@@ -763,8 +790,34 @@ export default function TrainerClientDetailPage({
                 Aún no has enviado ningún formulario a este miembro.
               </p>
             ) : (
-              <Tabs defaultValue="pending" className="w-full">
-                <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1">
+              <Tabs
+                value={activeFormsHistoryTab}
+                onValueChange={setActiveFormsHistoryTab}
+                className="w-full"
+              >
+                <div className="mb-4 sm:hidden">
+                  <Select
+                    value={activeFormsHistoryTab}
+                    onValueChange={setActiveFormsHistoryTab}
+                  >
+                    <SelectTrigger className="w-full rounded-xl border-gray-800 bg-gray-900 text-white">
+                      <SelectValue placeholder="Filtrar historial" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">
+                        Pendientes
+                        {trainerPendingTabAssignments.length > 0
+                          ? ` (${trainerPendingTabAssignments.length})`
+                          : ""}
+                      </SelectItem>
+                      <SelectItem value="notCompleted">
+                        No completados
+                      </SelectItem>
+                      <SelectItem value="completed">Completados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <TabsList className="mb-4 hidden h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1 sm:flex">
                   <TabsTrigger
                     value="pending"
                     className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
