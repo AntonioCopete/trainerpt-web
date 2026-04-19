@@ -995,7 +995,7 @@ export function CustomRoutineDialog({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="border-gray-700 bg-gray-800 text-gray-100"
+                  className="border-gray-700 bg-gray-800 text-gray-100 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100"
                 />
               </div>
               <div className="space-y-1.5">
@@ -1006,7 +1006,7 @@ export function CustomRoutineDialog({
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="border-gray-700 bg-gray-800 text-gray-100"
+                  className="border-gray-700 bg-gray-800 text-gray-100 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100"
                 />
               </div>
             </div>

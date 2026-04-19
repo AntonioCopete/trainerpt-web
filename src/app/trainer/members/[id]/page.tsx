@@ -21,10 +21,18 @@ import {
   TrendingUp,
   Archive,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +58,8 @@ import type {
 } from "@/src/app/lib/types/routines";
 import {
   formatRoutineDate,
+  routineAssignmentDisplayDescription,
+  routineAssignmentDisplayName,
   ROUTINE_STATUS_LABELS,
 } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
@@ -75,6 +85,8 @@ export default function TrainerClientDetailPage({
   const router = useRouter();
   const [member, setMember] = useState<MemberSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeMainTab, setActiveMainTab] = useState("forms");
+  const [activeFormsHistoryTab, setActiveFormsHistoryTab] = useState("pending");
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [routineTemplates, setRoutineTemplates] = useState<RoutineTemplate[]>(
@@ -404,9 +416,9 @@ export default function TrainerClientDetailPage({
     return (
       <div
         key={assignment.id}
-        className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3"
+        className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-gray-800/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
+        <div className="min-w-0">
           <p className="font-medium text-white">
             {assignment.template?.name ?? "Formulario"}
           </p>
@@ -453,7 +465,7 @@ export default function TrainerClientDetailPage({
               </p>
             )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {assignment.status === "completed" ? (
             <>
               <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
@@ -466,7 +478,7 @@ export default function TrainerClientDetailPage({
                 onClick={() =>
                   router.push(`/trainer/assignments/${assignment.id}`)
                 }
-                className="gap-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="h-8 gap-1 px-2 text-xs text-gray-400 hover:bg-gray-800 hover:text-white"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Ver respuesta
@@ -486,7 +498,7 @@ export default function TrainerClientDetailPage({
             <>
               <span className="inline-flex items-center gap-1 rounded-full bg-gray-600/25 px-2 py-0.5 text-[11px] font-medium text-gray-300">
                 <Lock className="h-3 w-3" />
-                Pendiente · aún no disponible
+                Pendiente
               </span>
               {assignment.repeat && assignment.repeat !== "none" && (
                 <Button
@@ -558,7 +570,7 @@ export default function TrainerClientDetailPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
             onClick={() => router.push("/trainer/members")}
@@ -566,26 +578,26 @@ export default function TrainerClientDetailPage({
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20">
               <User className="h-7 w-7 text-red-400" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-bold text-white">
                 {member.fullName || "Sin nombre"}
               </h1>
               <p className="mt-1 flex items-center gap-2 text-sm text-gray-400">
-                <Mail className="h-4 w-4" />
-                {member.email}
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="truncate">{member.email}</span>
               </p>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-start sm:ml-auto">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={unlinkingMember}
                 onClick={handleUnlinkMember}
-                className="gap-1 border-red-500/30 bg-transparent text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                className="h-9 gap-1 border-red-500/30 bg-transparent px-3 text-red-400 hover:bg-red-500/10 hover:text-red-300"
               >
                 <X className="h-4 w-4" />
                 {unlinkingMember ? "Desvinculando..." : "Desvincular"}
@@ -673,8 +685,26 @@ export default function TrainerClientDetailPage({
         </DialogContent>
       </Dialog>
 
-      <Tabs defaultValue="forms" className="w-full">
-        <TabsList className="mb-2 flex h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex-row sm:flex-wrap sm:gap-1">
+      <Tabs
+        value={activeMainTab}
+        onValueChange={setActiveMainTab}
+        className="w-full"
+      >
+        <div className="mb-2 sm:hidden">
+          <Select value={activeMainTab} onValueChange={setActiveMainTab}>
+            <SelectTrigger className="w-full rounded-xl border-gray-800 bg-gray-900/80 text-white">
+              <SelectValue placeholder="Seleccionar sección" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="forms">Formularios</SelectItem>
+              <SelectItem value="progress">Progreso</SelectItem>
+              <SelectItem value="routines">Rutinas</SelectItem>
+              <SelectItem value="resources">Recursos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <TabsList className="mb-2 hidden h-auto w-full flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900/80 p-2 sm:flex sm:flex-row sm:flex-wrap sm:gap-1">
           <TabsTrigger
             value="forms"
             className="flex-1 gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm text-gray-400 data-[state=active]:border-gray-700 data-[state=active]:bg-gray-800 data-[state=active]:text-white sm:flex-initial"
@@ -763,8 +793,34 @@ export default function TrainerClientDetailPage({
                 Aún no has enviado ningún formulario a este miembro.
               </p>
             ) : (
-              <Tabs defaultValue="pending" className="w-full">
-                <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1">
+              <Tabs
+                value={activeFormsHistoryTab}
+                onValueChange={setActiveFormsHistoryTab}
+                className="w-full"
+              >
+                <div className="mb-4 sm:hidden">
+                  <Select
+                    value={activeFormsHistoryTab}
+                    onValueChange={setActiveFormsHistoryTab}
+                  >
+                    <SelectTrigger className="w-full rounded-xl border-gray-800 bg-gray-900 text-white">
+                      <SelectValue placeholder="Filtrar historial" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">
+                        Pendientes
+                        {trainerPendingTabAssignments.length > 0
+                          ? ` (${trainerPendingTabAssignments.length})`
+                          : ""}
+                      </SelectItem>
+                      <SelectItem value="notCompleted">
+                        No completados
+                      </SelectItem>
+                      <SelectItem value="completed">Completados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <TabsList className="mb-4 hidden h-auto min-h-10 w-full flex-wrap gap-1 rounded-xl border border-gray-800 bg-gray-900 p-1 sm:flex">
                   <TabsTrigger
                     value="pending"
                     className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400"
@@ -941,7 +997,7 @@ export default function TrainerClientDetailPage({
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-white">
-                            {assignment.template?.name ?? "Rutina"}
+                            {routineAssignmentDisplayName(assignment)}
                           </p>
                           <p className="text-xs text-gray-400">
                             {formatRoutineDate(assignment.startDate)} -{" "}
@@ -987,9 +1043,10 @@ export default function TrainerClientDetailPage({
 
                       {isExpanded && (
                         <div className="mt-4">
-                          {assignment.template?.description && (
+                          {(assignment.template?.description?.trim() ||
+                            assignment.description?.trim()) && (
                             <p className="mb-3 text-sm text-gray-300">
-                              {assignment.template.description}
+                              {routineAssignmentDisplayDescription(assignment)}
                             </p>
                           )}
 
@@ -1000,14 +1057,15 @@ export default function TrainerClientDetailPage({
                               </p>
                               {groupedHistoryExercises.map(
                                 (group, groupIdx) => (
-                                  <div
+                                  <details
                                     key={`${assignment.id}-group-${groupIdx}-${group.title}`}
-                                    className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                                    className="group rounded-lg border border-gray-800 bg-gray-900/50"
                                   >
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                                      {group.title}
-                                    </p>
-                                    <div className="space-y-2">
+                                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-orange-300 marker:content-['']">
+                                      <span>{group.title}</span>
+                                      <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" />
+                                    </summary>
+                                    <div className="space-y-2 border-t border-gray-800 px-3 py-3">
                                       {group.exercises.map((item, index) => (
                                         <div
                                           key={`${assignment.id}-${group.title}-${item.exerciseId}-${index}`}
@@ -1071,7 +1129,7 @@ export default function TrainerClientDetailPage({
                                         </div>
                                       ))}
                                     </div>
-                                  </div>
+                                  </details>
                                 ),
                               )}
                             </div>

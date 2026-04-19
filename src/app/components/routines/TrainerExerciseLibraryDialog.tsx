@@ -13,6 +13,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
 import type {
@@ -197,9 +204,23 @@ export function TrainerExerciseLibraryDialog({
             onValueChange={(v) => setTab(v as "all" | "mine")}
             className="flex min-h-0 flex-1 flex-col gap-3"
           >
+            <div className="sm:hidden">
+              <Select
+                value={tab}
+                onValueChange={(v) => setTab(v as "all" | "mine")}
+              >
+                <SelectTrigger className="w-full border-gray-800 bg-gray-900 text-white">
+                  <SelectValue placeholder="Seleccionar pestaña" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="mine">Mis propios</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <TabsList
               variant="line"
-              className="h-auto w-full shrink-0 justify-start border-b border-gray-800 bg-transparent p-0"
+              className="hidden h-auto w-full shrink-0 justify-start border-b border-gray-800 bg-transparent p-0 sm:inline-flex"
             >
               <TabsTrigger
                 value="all"

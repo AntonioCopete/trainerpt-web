@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Dumbbell } from "lucide-react";
+import { CalendarClock, ChevronDown, Dumbbell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
@@ -12,6 +12,8 @@ import type {
 } from "@/src/app/lib/types/routines";
 import {
   formatRoutineDate,
+  routineAssignmentDisplayDescription,
+  routineAssignmentDisplayName,
   ROUTINE_STATUS_LABELS,
 } from "@/src/app/lib/types/routines";
 
@@ -147,10 +149,10 @@ export default function MemberRoutinesPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-lg font-semibold text-white">
-                {activeAssignment.template?.name ?? "Rutina"}
+                {routineAssignmentDisplayName(activeAssignment)}
               </p>
               <p className="mt-1 text-sm text-gray-300">
-                {activeAssignment.template?.description ?? "Sin descripcion"}
+                {routineAssignmentDisplayDescription(activeAssignment)}
               </p>
             </div>
             <Badge
@@ -179,14 +181,16 @@ export default function MemberRoutinesPage() {
                 Ejercicios
               </p>
               {groupedExercises.map((group, groupIdx) => (
-                <div
+                <details
                   key={`${activeAssignment.id}-group-${groupIdx}-${group.title}`}
-                  className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                  className="group rounded-lg border border-gray-800 bg-gray-900/50"
+                  open={groupIdx === 0}
                 >
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                    {group.title}
-                  </p>
-                  <div className="space-y-2">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-orange-300 marker:content-['']">
+                    <span>{group.title}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" />
+                  </summary>
+                  <div className="space-y-2 border-t border-gray-800 px-3 py-3">
                     {group.exercises.map((item, index) => (
                       <div
                         key={`${activeAssignment.id}-${group.title}-${item.exerciseId}-${index}`}
@@ -238,7 +242,7 @@ export default function MemberRoutinesPage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </details>
               ))}
             </div>
           )}
@@ -290,7 +294,7 @@ export default function MemberRoutinesPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-white">
-                      {assignment.template?.name ?? "Rutina"}
+                      {routineAssignmentDisplayName(assignment)}
                     </p>
                     <p className="text-xs text-gray-400">
                       {formatRoutineDate(assignment.startDate)} -{" "}
@@ -328,14 +332,15 @@ export default function MemberRoutinesPage() {
                           Ejercicios
                         </p>
                         {groupedHistoryExercises.map((group, groupIdx) => (
-                          <div
+                          <details
                             key={`${assignment.id}-history-group-${groupIdx}-${group.title}`}
-                            className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                            className="group rounded-lg border border-gray-800 bg-gray-900/50"
                           >
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                              {group.title}
-                            </p>
-                            <div className="space-y-2">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-orange-300 marker:content-['']">
+                              <span>{group.title}</span>
+                              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" />
+                            </summary>
+                            <div className="space-y-2 border-t border-gray-800 px-3 py-3">
                               {group.exercises.map((item, index) => (
                                 <div
                                   key={`${assignment.id}-history-${group.title}-${item.exerciseId}-${index}`}
@@ -394,7 +399,7 @@ export default function MemberRoutinesPage() {
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          </details>
                         ))}
                       </div>
                     )}

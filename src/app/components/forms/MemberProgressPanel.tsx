@@ -17,7 +17,10 @@ import {
   type MemberProgressPayload,
 } from "@/src/app/lib/member-progress-api";
 import { getPresignedPhotoUrlsBatch } from "@/src/app/lib/forms-upload";
-import { photoTypeForFieldId } from "@/src/app/lib/types/forms";
+import {
+  isBaseFormTemplateFieldId,
+  photoTypeForFieldId,
+} from "@/src/app/lib/types/forms";
 import { PhotoUpload } from "./PhotoUpload";
 import {
   Select,
@@ -64,9 +67,12 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
         const data = await fetchMemberProgress({ token, memberId });
         if (cancelled) return;
         setProgress(data);
+        const presetNumbers = data.numberFields.filter((field) =>
+          isBaseFormTemplateFieldId(field.id),
+        );
         const preferred =
-          data.numberFields.find((f) => f.id === "weight")?.id ??
-          data.numberFields[0]?.id ??
+          presetNumbers.find((f) => f.id === "weight")?.id ??
+          presetNumbers[0]?.id ??
           "";
         setMetricId(preferred);
       } catch (e) {
@@ -84,6 +90,22 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
       cancelled = true;
     };
   }, [memberId, supabase]);
+
+  const presetNumberFields = useMemo(
+    () =>
+      progress?.numberFields.filter((field) =>
+        isBaseFormTemplateFieldId(field.id),
+      ) ?? [],
+    [progress],
+  );
+
+  const presetPhotoFields = useMemo(
+    () =>
+      progress?.photoFields.filter((field) =>
+        isBaseFormTemplateFieldId(field.id),
+      ) ?? [],
+    [progress],
+  );
 
   const photoKeysSignature = useMemo(() => {
     if (!progress) return "";
@@ -143,7 +165,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
       }));
   }, [progress, metricId]);
 
-  const selectedField = progress?.numberFields.find((f) => f.id === metricId);
+  const selectedField = presetNumberFields.find((f) => f.id === metricId);
 
   const photoTimelinePoints = useMemo(() => {
     if (!progress) return [];
@@ -153,9 +175,9 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
           new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
       )
       .filter((point) =>
-        progress.photoFields.some((f) => Boolean(point.photoKeys[f.id])),
+        presetPhotoFields.some((f) => Boolean(point.photoKeys[f.id])),
       );
-  }, [progress]);
+  }, [progress, presetPhotoFields]);
 
   if (loading) {
     return (
@@ -184,7 +206,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
 
   return (
     <div className="space-y-10">
-      {progress.numberFields.length > 0 && (
+      {presetNumberFields.length > 0 && (
         <section className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
@@ -199,7 +221,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
                   <SelectValue placeholder="Métrica" />
                 </SelectTrigger>
                 <SelectContent>
-                  {progress.numberFields.map((f) => (
+                  {presetNumberFields.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
                       {f.label}
                       {f.unit ? ` (${f.unit})` : ""}
@@ -276,7 +298,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
         </section>
       )}
 
-      {progress.photoFields.length > 0 && (
+      {presetPhotoFields.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Camera className="h-4 w-4 text-red-400" />
@@ -308,7 +330,7 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
                   </span>
                 </p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {progress.photoFields.map((pf) => {
+                  {presetPhotoFields.map((pf) => {
                     const key = point.photoKeys[pf.id];
                     if (!key) return null;
                     const url = photoUrls[key] ?? "";
@@ -331,13 +353,12 @@ export function MemberProgressPanel({ memberId }: MemberProgressPanelProps) {
         </section>
       )}
 
-      {progress.numberFields.length === 0 &&
-        progress.photoFields.length === 0 && (
-          <p className="text-sm text-gray-500">
-            Los envíos completados no incluyen medidas ni fotos en el esquema
-            del formulario.
-          </p>
-        )}
+      {presetNumberFields.length === 0 && presetPhotoFields.length === 0 && (
+        <p className="text-sm text-gray-500">
+          Los envíos completados no incluyen campos preestablecidos de medidas
+          ni fotos.
+        </p>
+      )}
     </div>
   );
 }
