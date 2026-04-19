@@ -331,12 +331,12 @@ export default function BillingPage() {
                     {/* Footer */}
                     <div className="p-6 pt-0 mt-auto">
                       {isCurrent ? (
-                        <Button
-                          className="w-full bg-gray-800 hover:bg-gray-800 cursor-default"
-                          disabled
+                        <div
+                          role="status"
+                          className="flex w-full items-center justify-center rounded-lg border border-orange-500/40 bg-gradient-to-r from-red-500/20 to-orange-500/20 py-2.5 text-sm font-semibold text-white shadow-inner shadow-black/20"
                         >
                           Plan Actual
-                        </Button>
+                        </div>
                       ) : planInfo.plan === SubscriptionPlan.FREE ? (
                         <Button
                           className="w-full border-gray-700 hover:border-gray-600 hover:bg-gray-800/50"

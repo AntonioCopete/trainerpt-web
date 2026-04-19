@@ -308,11 +308,10 @@ export function LandingPage() {
     {
       icon: <Star className="h-10 w-10" />,
       title: "FREE",
-      price: "0€",
-      period: "/ mes",
+      price: "Gratis",
       description: "Para empezar sin excusas",
       features: [
-        "Hasta 3 clientes activos",
+        "Hasta 2 clientes activos",
         "Formularios ilimitados",
         "Rutinas de ejercicio",
         "Soporte por email",
@@ -324,11 +323,11 @@ export function LandingPage() {
     {
       icon: <Star className="h-10 w-10" />,
       title: "STARTER",
-      price: "29€",
+      price: "9€",
       period: "/ mes",
       description: "Ideal para escalar sin complicaciones",
       features: [
-        "Hasta 15 clientes activos",
+        "Hasta 5 clientes activos",
         "Formularios ilimitados",
         "Rutinas de ejercicio",
         "Soporte prioritario",
@@ -341,11 +340,11 @@ export function LandingPage() {
     {
       icon: <Crown className="h-10 w-10" />,
       title: "PRO",
-      price: "49€",
+      price: "19.99€",
       period: "/ mes",
       description: "Para entrenadores que quieren crecer de verdad",
       features: [
-        "Hasta 40 clientes activos",
+        "Hasta 20 clientes activos",
         "Formularios ilimitados",
         "Rutinas de ejercicio",
         "Soporte prioritario",
@@ -357,7 +356,7 @@ export function LandingPage() {
     {
       icon: <Diamond className="h-10 w-10" />,
       title: "ELITE",
-      price: "99€",
+      price: "49.99€",
       period: "/ mes",
       description: "Para pros con volumen o estudios",
       features: [
