@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Dumbbell } from "lucide-react";
+import { CalendarClock, ChevronDown, Dumbbell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowser } from "@/src/app/lib/supabase/browser";
@@ -179,14 +179,16 @@ export default function MemberRoutinesPage() {
                 Ejercicios
               </p>
               {groupedExercises.map((group, groupIdx) => (
-                <div
+                <details
                   key={`${activeAssignment.id}-group-${groupIdx}-${group.title}`}
-                  className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                  className="group rounded-lg border border-gray-800 bg-gray-900/50"
+                  open={groupIdx === 0}
                 >
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                    {group.title}
-                  </p>
-                  <div className="space-y-2">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-orange-300 marker:content-['']">
+                    <span>{group.title}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" />
+                  </summary>
+                  <div className="space-y-2 border-t border-gray-800 px-3 py-3">
                     {group.exercises.map((item, index) => (
                       <div
                         key={`${activeAssignment.id}-${group.title}-${item.exerciseId}-${index}`}
@@ -238,7 +240,7 @@ export default function MemberRoutinesPage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </details>
               ))}
             </div>
           )}
@@ -328,14 +330,15 @@ export default function MemberRoutinesPage() {
                           Ejercicios
                         </p>
                         {groupedHistoryExercises.map((group, groupIdx) => (
-                          <div
+                          <details
                             key={`${assignment.id}-history-group-${groupIdx}-${group.title}`}
-                            className="rounded-lg border border-gray-800 bg-gray-900/50 p-3"
+                            className="group rounded-lg border border-gray-800 bg-gray-900/50"
                           >
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                              {group.title}
-                            </p>
-                            <div className="space-y-2">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-orange-300 marker:content-['']">
+                              <span>{group.title}</span>
+                              <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180" />
+                            </summary>
+                            <div className="space-y-2 border-t border-gray-800 px-3 py-3">
                               {group.exercises.map((item, index) => (
                                 <div
                                   key={`${assignment.id}-history-${group.title}-${item.exerciseId}-${index}`}
@@ -394,7 +397,7 @@ export default function MemberRoutinesPage() {
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          </details>
                         ))}
                       </div>
                     )}
