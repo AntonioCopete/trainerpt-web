@@ -25,9 +25,39 @@ import type {
   MuscleCatalogItem,
 } from "@/src/app/lib/types/routines";
 import { MuscleMultiSelect } from "@/src/app/components/routines/MuscleMultiSelect";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Radix Select needs a non-empty sentinel for “sin principal”. */
 const PRIMARY_NONE_VALUE = "__none__";
+
+/**
+ * Token for our backend: never send `Bearer undefined` (backend → "Invalid Compact JWS").
+ * Refreshes when the access token is missing or near expiry.
+ */
+async function getBackendBearerToken(
+  supabase: SupabaseClient,
+): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const raw = session.access_token?.trim();
+  if (!raw) return null;
+
+  const expiresAt = session.expires_at;
+  const nearOrPastExpiry =
+    typeof expiresAt === "number" && expiresAt * 1000 < Date.now() + 60_000;
+
+  if (nearOrPastExpiry && session.refresh_token) {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (!error && data.session?.access_token?.trim()) {
+      return data.session.access_token.trim();
+    }
+  }
+
+  return raw;
+}
 
 interface CustomExerciseDialogProps {
   open: boolean;
@@ -77,8 +107,7 @@ export function CustomExerciseDialog({
     setLoadingEdit(true);
     (async () => {
       try {
-        const session = await supabase.auth.getSession();
-        const token = session?.data?.session?.access_token;
+        const token = await getBackendBearerToken(supabase);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/exercises/custom/${editingExerciseId}`,
           {
@@ -127,8 +156,7 @@ export function CustomExerciseDialog({
     let cancelled = false;
     (async () => {
       try {
-        const session = await supabase.auth.getSession();
-        const token = session?.data?.session?.access_token;
+        const token = await getBackendBearerToken(supabase);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/muscles`,
           {
@@ -139,6 +167,11 @@ export function CustomExerciseDialog({
         if (cancelled) return;
         if (!res.ok) {
           setMusclesCatalog([]);
+          if (res.status === 401) {
+            toast.error(
+              "Sesión caducada o no válida. Cierra sesión y vuelve a entrar.",
+            );
+          }
           return;
         }
         setMusclesCatalog(Array.isArray(data.muscles) ? data.muscles : []);
@@ -199,8 +232,13 @@ export function CustomExerciseDialog({
 
     setSaving(true);
     try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token;
+      const token = await getBackendBearerToken(supabase);
+      if (!token) {
+        toast.error(
+          "No hay sesión activa o el token no es válido. Vuelve a iniciar sesión.",
+        );
+        return;
+      }
       const normalizedDescription = descriptionLines
         .map((line) => line.trim())
         .filter((line) => line.length > 0)
