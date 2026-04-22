@@ -32,12 +32,38 @@ export const metadata = {
     locale: "es_ES",
     type: "website",
     url: siteUrl,
+    images: [
+      {
+        url: "/images/logo/logo-dark-no-bg.png",
+        width: 512,
+        height: 512,
+        alt: "Logo TrainerPT",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "TrainerPT",
     description:
       "Gestiona clientes, rutinas y formularios desde una única aplicación web para entrenadores personales.",
+    images: ["/images/logo/logo-dark-no-bg.png"],
+  },
+  icons: {
+    icon: [
+      {
+        url: "/images/logo/logo.png",
+        sizes: "32x32",
+        type: "image/png",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/images/logo/logo-dark-no-bg.png",
+        sizes: "32x32",
+        type: "image/png",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+    apple: [{ url: "/images/logo/logo.png" }],
   },
 };
 
