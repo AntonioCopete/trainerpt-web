@@ -16,6 +16,7 @@ import {
   Utensils,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   motion,
@@ -431,6 +432,24 @@ export function LandingPage() {
             reduceMotion ? undefined : { duration: 1, ease: "easeOut" }
           }
         >
+          <motion.div
+            className="mb-10 flex justify-center"
+            initial={reduceMotion ? false : { opacity: 0, y: -20 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={
+              reduceMotion ? undefined : { duration: 0.6, ease: "easeOut" }
+            }
+          >
+            <Image
+              src="/images/logo/logo-dark-no-bg.png"
+              alt="Logo TrainerPT"
+              width={320}
+              height={120}
+              className="h-auto w-52 sm:w-64 md:w-80"
+              priority
+            />
+          </motion.div>
+
           <motion.h1
             className="text-6xl md:text-8xl font-bold mb-6 tracking-tighter"
             initial={reduceMotion ? false : { scale: 0.8 }}
@@ -440,21 +459,9 @@ export function LandingPage() {
             }
           >
             ENTRENA COMO SIEMPRE
-            <motion.span
-              className="block text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500"
-              animate={
-                reduceMotion
-                  ? undefined
-                  : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }
-              }
-              transition={
-                reduceMotion
-                  ? undefined
-                  : { duration: 3, repeat: Number.POSITIVE_INFINITY }
-              }
-            >
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
               GESTIONA COMO NUNCA
-            </motion.span>
+            </span>
           </motion.h1>
 
           <motion.p
