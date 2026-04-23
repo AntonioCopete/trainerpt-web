@@ -208,14 +208,14 @@ export function LandingPage() {
     {
       id: "routines",
       title: "RUTINAS",
-      subtitle: "Crea Rutinas en Minutos, No en Horas",
+      subtitle: "Crea entrenamientos a medida en minutos",
       description:
-        "Deja de perder tiempo en Excel. Diseña entrenamientos profesionales con nuestro constructor visual, accede a +800 ejercicios verificados y reutiliza tus mejores plantillas.",
+        "Diseña entrenamientos visuales, reutiliza tus mejores plantillas y escala tu trabajo sin perder calidad ni tiempo.",
       bulletPoints: [
-        "Constructor intuitivo: arrastra, suelta, listo",
-        "+800 ejercicios verificados (no tendrás que buscar en Google)",
-        "Guarda plantillas y úsalas con cualquier cliente",
-        "Asigna por semanas, meses o el período que necesites",
+        "Sistema de plantillas: guarda estructuras base y adáptalas en segundos",
+        "Biblioteca de ejercicios integrada para explicar técnica desde el día uno",
+        "Adiós a los PDFs: entrenamientos en móvil, siempre interactivos y actualizados",
+        "Acabado profesional para cada cliente, incluso cuando escalas",
       ],
       icon: <Dumbbell className="h-8 w-8" />,
       gradient: "from-red-500 to-orange-500",
@@ -224,14 +224,14 @@ export function LandingPage() {
     {
       id: "forms",
       title: "FORMULARIOS",
-      subtitle: "Deja de Perseguir a tus Clientes por WhatsApp",
+      subtitle: "Seguimiento automático",
       description:
-        "Crea formularios personalizados, envíalos a tus clientes y recibe sus respuestas organizadas. Olvídate de capturas de pantalla perdidas en el chat.",
+        "Deja de perseguir a tus clientes. Configura cuestionarios iniciales y revisiones periódicas; la app recoge y ordena la información por ti.",
       bulletPoints: [
-        "Check-ins personalizados para cada objetivo",
-        "Respuestas organizadas (adiós capturas perdidas)",
-        "Historial completo: ve la evolución de un vistazo",
-        "Crea una vez, reutiliza siempre",
+        "Formularios de alta a medida para conocer cada caso desde el minuto cero",
+        "Check-ins automáticos de peso, sensaciones y progreso",
+        "Todo queda guardado en la ficha del cliente: fotos, medidas y respuestas",
+        "Menos fricción operativa y más tiempo para entrenar",
       ],
       icon: <FileText className="h-8 w-8" />,
       gradient: "from-blue-500 to-cyan-500",
@@ -239,70 +239,55 @@ export function LandingPage() {
     },
     {
       id: "clients",
-      title: "CLIENTES",
-      subtitle: "Todos tus Clientes en un Solo Lugar",
+      title: "PROGRESO",
+      subtitle: "Evolución visual, decisiones más rápidas",
       description:
-        "Gestiona tu cartera completa desde una plataforma. Invita nuevos clientes con un link, organiza sus perfiles y escala tu negocio sin caos.",
+        "Visualiza la evolución de peso, medidas y marcas con gráficos claros para demostrar valor y tomar mejores decisiones.",
       bulletPoints: [
-        "Invita clientes con un link (nada de copiar Excel)",
-        "Perfiles organizados con toda su info y historial",
-        "Ve de un vistazo quién necesita seguimiento",
-        "Crece según tu plan: de 3 a clientes ilimitados",
+        "Gráficos automáticos con los datos de cada check-in",
+        "Comparativas reales entre semanas, medidas y fotos",
+        "Detecta rápido qué está funcionando y qué hay que ajustar",
+        "Aumenta la retención mostrando resultados tangibles",
       ],
-      icon: <Users className="h-8 w-8" />,
+      icon: <TrendingUp className="h-8 w-8" />,
       gradient: "from-green-500 to-emerald-500",
       image: "/images/progress.png",
     },
-    {
-      id: "web",
-      title: "100% WEB",
-      subtitle: "Accede Desde Donde Estés, Cuando Quieras",
-      description:
-        "En el gym, en casa, desde el móvil o el ordenador. Sin instalaciones, sin actualizaciones, sin complicaciones. Todo sincronizado automáticamente.",
-      bulletPoints: [
-        "Abre tu navegador y empieza (móvil o PC)",
-        "Cero instalaciones, cero actualizaciones manuales",
-        "Sincronización instantánea entre dispositivos",
-        "Tu trabajo siempre disponible, nunca se pierde",
-      ],
-      icon: <Globe className="h-8 w-8" />,
-      gradient: "from-indigo-500 to-blue-500",
-      image: "/images/100web.png",
-    },
-    {
-      id: "pagos",
-      title: "PAGOS",
-      subtitle: "Cobra sin Perseguir (Próximamente)",
-      description:
-        "Automatiza cobros recurrentes, reduce impagos y controla el estado de cada cliente. Ya no tendrás que recordar quién debe qué.",
-      bulletPoints: [
-        "Cobros automáticos mes a mes (sin recordatorios)",
-        "Ve de un vistazo quién ha pagado y quién no",
-        "Reduce impagos con recordatorios automáticos",
-        "Integrado con Stripe: seguro y profesional",
-      ],
-      icon: <CreditCard className="h-8 w-8" />,
-      gradient: "from-purple-500 to-pink-500",
-      image: "/images/payments.png",
-      comingSoon: true,
-    },
-    {
-      id: "dietas",
-      title: "DIETAS",
-      subtitle: "Planificación Nutricional Simplificada (Próximamente)",
-      description:
-        "Crea planes de alimentación personalizados sin complicarte. Ajusta según objetivos, preferencias y evolución de cada cliente.",
-      bulletPoints: [
-        "Planes nutricionales adaptados a cada objetivo",
-        "Biblioteca de alimentos y comidas predefinidas",
-        "Ajusta macros y calorías con un click",
-        "Plantillas reutilizables para casos similares",
-      ],
-      icon: <Utensils className="h-8 w-8" />,
-      gradient: "from-orange-500 to-red-500",
-      image: "/images/nutrition-planning.jpg",
-      comingSoon: true,
-    },
+
+    // {
+    //   id: "pagos",
+    //   title: "PAGOS",
+    //   subtitle: "Cobra sin Perseguir (Próximamente)",
+    //   description:
+    //     "Automatiza cobros recurrentes, reduce impagos y controla el estado de cada cliente. Ya no tendrás que recordar quién debe qué.",
+    //   bulletPoints: [
+    //     "Cobros automáticos mes a mes (sin recordatorios)",
+    //     "Ve de un vistazo quién ha pagado y quién no",
+    //     "Reduce impagos con recordatorios automáticos",
+    //     "Integrado con Stripe: seguro y profesional",
+    //   ],
+    //   icon: <CreditCard className="h-8 w-8" />,
+    //   gradient: "from-purple-500 to-pink-500",
+    //   image: "/images/payments.png",
+    //   comingSoon: true,
+    // },
+    // {
+    //   id: "dietas",
+    //   title: "DIETAS",
+    //   subtitle: "Planificación Nutricional Simplificada (Próximamente)",
+    //   description:
+    //     "Crea planes de alimentación personalizados sin complicarte. Ajusta según objetivos, preferencias y evolución de cada cliente.",
+    //   bulletPoints: [
+    //     "Planes nutricionales adaptados a cada objetivo",
+    //     "Biblioteca de alimentos y comidas predefinidas",
+    //     "Ajusta macros y calorías con un click",
+    //     "Plantillas reutilizables para casos similares",
+    //   ],
+    //   icon: <Utensils className="h-8 w-8" />,
+    //   gradient: "from-orange-500 to-red-500",
+    //   image: "/images/nutrition-planning.jpg",
+    //   comingSoon: true,
+    // },
   ];
 
   const pricingPlans = [
@@ -472,9 +457,9 @@ export function LandingPage() {
               reduceMotion ? undefined : { delay: 0.5, duration: 0.8 }
             }
           >
-            Organiza clientes, rutinas y formularios en un solo lugar:
-            constructor visual de entrenamientos, plantillas reutilizables y
-            seguimiento por formularios, accesible desde el navegador.
+            Deja atrás el caos de PDFs, Excels y WhatsApp. Centraliza rutinas,
+            revisiones y clientes en una sola app y ofrece la experiencia
+            profesional que tus clientes realmente pagan.
           </motion.p>
 
           <motion.div
@@ -485,20 +470,23 @@ export function LandingPage() {
               reduceMotion ? undefined : { delay: 0.8, duration: 0.6 }
             }
           >
-            <Button
-              size="lg"
-              className="text-lg px-12 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
-              asChild
-            >
-              <Link href="/join">
-                EMPIEZA GRATIS
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <div className="flex flex-col items-center gap-2">
+              <Button
+                size="lg"
+                className="text-lg px-10 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
+                asChild
+              >
+                <Link href="/join">
+                  EMPIEZA GRATIS
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <p className="text-xs sm:text-sm text-gray-400">con 2 clientes</p>
+            </div>
           </motion.div>
 
           {/* Stats */}
-          {/* <motion.div
+          <motion.div
             className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={reduceMotion ? undefined : { opacity: 1 }}
@@ -507,9 +495,9 @@ export function LandingPage() {
             }
           >
             {[
-              { number: "500+", label: "Entrenadores Elite" },
-              { number: "10K+", label: "Clientes Activos" },
-              { number: "50K+", label: "Rutinas IA" },
+              { number: "+10h", label: "Ahorradas semanalmente" },
+              { number: "+34%", label: "Retención de clientes" },
+              { number: "x2.5", label: "Capacidad de atender clientes" },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -525,7 +513,7 @@ export function LandingPage() {
                 <div className="text-gray-400">{stat.label}</div>
               </motion.div>
             ))}
-          </motion.div> */}
+          </motion.div>
         </motion.div>
 
         {/* Parallax Elements (desactivado si reduce motion) */}
@@ -560,18 +548,18 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl text-gray-400 max-w-4xl mx-auto">
-              Menos herramientas sueltas y menos fricción con tus clientes:
-              rutinas con plantillas, formularios de seguimiento y gestión de
-              cartera en una sola aplicación web.
+              Cambia el caos de WhatsApps, notas y hojas de cálculo por una
+              experiencia premium. Controla desde la primera rutina hasta cada
+              revisión en un mismo lugar.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12 max-w-6xl mx-auto">
+          <div className="grid grid-cols-3 gap-4 mb-12 max-w-2xl mx-auto justify-items-center">
             {features.map((feature, index) => (
               <motion.button
                 key={feature.id}
                 onClick={() => setActiveFeature(index)}
-                className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                className={`w-full max-w-[220px] p-4 rounded-2xl border-2 transition-all duration-300 ${
                   activeFeature === index
                     ? `bg-gradient-to-r ${feature.gradient} border-transparent text-white`
                     : "bg-gray-900 border-gray-800 hover:border-gray-700 text-gray-300"
@@ -582,11 +570,11 @@ export function LandingPage() {
                 <div className="flex flex-col items-center gap-2">
                   {feature.icon}
                   <span className="text-sm font-semibold">{feature.title}</span>
-                  {feature.comingSoon && (
+                  {/* {feature.comingSoon && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
                       Pronto
                     </span>
-                  )}
+                  )} */}
                 </div>
               </motion.button>
             ))}
@@ -610,11 +598,11 @@ export function LandingPage() {
                   </div>
                   <h3 className="text-3xl font-bold mb-4 flex items-center gap-3">
                     {features[activeFeature].subtitle}
-                    {features[activeFeature].comingSoon && (
+                    {/* {features[activeFeature].comingSoon && (
                       <span className="text-sm px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 font-medium">
                         Próximamente
                       </span>
-                    )}
+                    )} */}
                   </h3>
                   <p className="text-gray-300 mb-8 text-lg">
                     {features[activeFeature].description}
@@ -739,19 +727,21 @@ export function LandingPage() {
                     ))}
                   </ul>
 
-                  <Button
-                    className={`w-full rounded-full py-3 transition-all duration-300 ${
-                      plan.highlighted
-                        ? "bg-white text-red-500 hover:bg-gray-100"
-                        : "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
-                    }`}
-                    asChild
-                  >
-                    <Link href="/join">
-                      {plan.cta}
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
+                  {plan.title === "FREE" ? (
+                    <Button
+                      className="w-full rounded-full py-3 transition-all duration-300 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+                      asChild
+                    >
+                      <Link href="/join">
+                        {plan.cta}
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center">
+                      Disponible al activar tu cuenta gratuita
+                    </p>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -787,21 +777,21 @@ export function LandingPage() {
               {
                 title: "Gestión Centralizada",
                 description:
-                  "Todos tus clientes, rutinas y formularios en un solo lugar. Sin Excel, sin notas perdidas, sin caos.",
+                  "Toda tu operativa en una sola app: clientes, rutinas y revisiones sin hojas sueltas ni chats interminables.",
                 icon: <Users className="h-10 w-10" />,
                 gradient: "from-red-500 to-orange-500",
               },
               {
-                title: "Plantillas Reutilizables",
+                title: "Seguimiento Automático",
                 description:
-                  "Crea una vez, reutiliza siempre. Guarda tus mejores rutinas y formularios como plantillas y ahorra horas cada semana.",
+                  "Programa check-ins y deja que la app recoja peso, fotos y sensaciones por ti, todo ordenado por cliente.",
                 icon: <FileText className="h-10 w-10" />,
                 gradient: "from-blue-500 to-cyan-500",
               },
               {
-                title: "Escalable por Diseño",
+                title: "Evolución Visual",
                 description:
-                  "Empieza con 3 clientes gratis. Cuando crezcas, actualiza a 15, 40 o ilimitados. Tu herramienta crece contigo.",
+                  "Demuestra resultados con gráficos y comparativas reales para tomar mejores decisiones y aumentar la retención.",
                 icon: <TrendingUp className="h-10 w-10" />,
                 gradient: "from-green-500 to-emerald-500",
               },
@@ -849,19 +839,23 @@ export function LandingPage() {
               </span>
             </h2>
             <p className="text-xl mb-10 max-w-3xl mx-auto text-gray-300">
-              Rutinas, formularios y clientes en un solo flujo, sin depender de
-              hojas de cálculo ni chats sueltos.
+              TrainerPT convierte tu forma de trabajar en una experiencia
+              profesional y organizada: rutinas, seguimiento y gestión de
+              clientes en un solo lugar.
             </p>
             <Button
               size="lg"
-              className="text-xl px-16 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
+              className="text-lg sm:text-xl px-10 sm:px-16 py-6 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300"
               asChild
             >
               <Link href="/join">
                 EMPIEZA GRATIS
-                <ArrowRight className="ml-2 h-6 w-6" />
+                <ArrowRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6" />
               </Link>
             </Button>
+            <p className="mt-3 text-xs sm:text-sm text-gray-400">
+              con 2 clientes
+            </p>
           </div>
         </motion.div>
       </section>
