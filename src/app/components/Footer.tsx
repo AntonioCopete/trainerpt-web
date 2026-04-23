@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -8,9 +9,13 @@ export function Footer() {
       <div className="container mx-auto px-4 py-10">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div className="max-w-md space-y-3">
-            <p className="text-lg font-semibold tracking-tight text-white">
-              TrainerPT
-            </p>
+            <Image
+              src="/images/logo/title-black-bg-no-bg.png"
+              alt="TrainerPT"
+              width={1251}
+              height={216}
+              className="h-auto w-44"
+            />
             <p className="text-sm leading-relaxed text-gray-400">
               Herramientas web para entrenadores personales y sus clientes.
             </p>

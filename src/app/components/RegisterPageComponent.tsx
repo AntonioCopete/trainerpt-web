@@ -92,7 +92,7 @@ export default function RegisterPageComponent({
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Image
-            src="/images/logo/logo-black-bg.jpeg"
+            src="/images/logo/logo-black-bg-no-bg.png"
             alt="TrainerPT"
             width={272}
             height={201}
