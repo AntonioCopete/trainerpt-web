@@ -320,13 +320,12 @@ export function LandingPage() {
       ],
       cta: "Llega al siguiente nivel",
       highlighted: true,
-      badge: "Más popular",
       gradient: "from-red-500 to-orange-500",
     },
     {
       icon: <Crown className="h-10 w-10" />,
       title: "PRO",
-      price: "19.99€",
+      price: "19€",
       period: "/ mes",
       description: "Para entrenadores que quieren crecer de verdad",
       features: [
@@ -337,12 +336,13 @@ export function LandingPage() {
       ],
       cta: "Listo para escalar",
       highlighted: false,
+      badge: "Más popular",
       gradient: "from-red-500 to-red-600",
     },
     {
       icon: <Diamond className="h-10 w-10" />,
       title: "ELITE",
-      price: "49.99€",
+      price: "49€",
       period: "/ mes",
       description: "Para pros con volumen o estudios",
       features: [
