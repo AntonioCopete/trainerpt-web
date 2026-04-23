@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+
+//TODO: Add link to billing page
+// import Link from "next/link";
 import { AlertTriangle, TrendingUp, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -78,12 +80,13 @@ export function SubscriptionLimitBanner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="default">
+          {/* TODO: Add link to billing page */}
+          {/* <Button asChild size="sm" variant="default">
             <Link href="/trainer/billing" className="gap-2">
               <TrendingUp className="h-4 w-4" />
               Actualizar Plan
             </Link>
-          </Button>
+          </Button> */}
           <Button
             size="sm"
             variant="ghost"
