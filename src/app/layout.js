@@ -34,7 +34,7 @@ export const metadata = {
     url: siteUrl,
     images: [
       {
-        url: "/images/logo/logo-dark-no-bg.png",
+        url: "/images/logo/logo-black-bg.jpeg",
         width: 512,
         height: 512,
         alt: "Logo TrainerPT",
@@ -46,24 +46,24 @@ export const metadata = {
     title: "TrainerPT",
     description:
       "Gestiona clientes, rutinas y formularios desde una única aplicación web para entrenadores personales.",
-    images: ["/images/logo/logo-dark-no-bg.png"],
+    images: ["/images/logo/logo-black-bg.jpeg"],
   },
   icons: {
     icon: [
       {
-        url: "/images/logo/logo.png",
+        url: "/images/logo/logo-white-bg.jpeg",
         sizes: "32x32",
         type: "image/png",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/images/logo/logo-dark-no-bg.png",
+        url: "/images/logo/logo-black-bg.jpeg",
         sizes: "32x32",
         type: "image/png",
         media: "(prefers-color-scheme: dark)",
       },
     ],
-    apple: [{ url: "/images/logo/logo.png" }],
+    apple: [{ url: "/images/logo/logo-white-bg.jpeg" }],
   },
 };
 
