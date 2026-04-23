@@ -441,7 +441,7 @@ export function LandingPage() {
             }
           >
             <Image
-              src="/images/logo/logo-dark-no-bg.png"
+              src="/images/logo/logo-black-bg.jpeg"
               alt="Logo TrainerPT"
               width={320}
               height={120}

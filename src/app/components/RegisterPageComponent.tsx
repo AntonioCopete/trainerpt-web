@@ -14,6 +14,7 @@ import {
 // import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Phone, UserCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { FcGoogle } from "react-icons/fc";
@@ -90,8 +91,15 @@ export default function RegisterPageComponent({
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">TrainPT</h1>
-          <p className="text-gray-400 mt-2">Crea tu cuenta</p>
+          <Image
+            src="/images/logo/logo-black-bg.jpeg"
+            alt="TrainerPT"
+            width={272}
+            height={201}
+            className="mx-auto h-auto w-48 sm:w-56"
+            priority
+          />
+          <p className="text-white-400 mt-2">Crea tu cuenta</p>
         </div>
 
         <Card className="card-dark">

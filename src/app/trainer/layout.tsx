@@ -45,12 +45,12 @@ const NAV_ITEMS = [
     icon: FolderOpen,
     active: true,
   },
-  {
-    label: "Suscripción",
-    href: "/trainer/billing",
-    icon: CreditCard,
-    active: true,
-  },
+  // {
+  //   label: "Suscripción",
+  //   href: "/trainer/billing",
+  //   icon: CreditCard,
+  //   active: true,
+  // },
 ];
 
 export default function TrainerLayout({
