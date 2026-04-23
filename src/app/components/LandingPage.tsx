@@ -326,7 +326,7 @@ export function LandingPage() {
     {
       icon: <Crown className="h-10 w-10" />,
       title: "PRO",
-      price: "19.99€",
+      price: "19€",
       period: "/ mes",
       description: "Para entrenadores que quieren crecer de verdad",
       features: [
@@ -342,7 +342,7 @@ export function LandingPage() {
     {
       icon: <Diamond className="h-10 w-10" />,
       title: "ELITE",
-      price: "49.99€",
+      price: "49€",
       period: "/ mes",
       description: "Para pros con volumen o estudios",
       features: [
