@@ -320,7 +320,6 @@ export function LandingPage() {
       ],
       cta: "Llega al siguiente nivel",
       highlighted: true,
-      badge: "Más popular",
       gradient: "from-red-500 to-orange-500",
     },
     {
@@ -337,6 +336,7 @@ export function LandingPage() {
       ],
       cta: "Listo para escalar",
       highlighted: false,
+      badge: "Más popular",
       gradient: "from-red-500 to-red-600",
     },
     {
