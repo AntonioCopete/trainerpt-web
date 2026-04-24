@@ -55,10 +55,10 @@ export function Footer() {
                 Contacto
               </h2>
               <a
-                href="mailto:info@trainpt.com"
+                href="mailto:pedro.ruiz@trainerpt.com"
                 className="text-sm text-gray-300 transition hover:text-white"
               >
-                info@trainpt.com
+                pedro.ruiz@trainerpt.com
               </a>
             </div>
           </div>
