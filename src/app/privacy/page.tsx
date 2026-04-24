@@ -29,10 +29,10 @@ export default function PrivacyPage() {
               del tratamiento de los datos personales recogidos a través de la
               aplicación. Contacto:{" "}
               <a
-                href="mailto:info@trainpt.com"
+                href="mailto:pedro.ruiz@trainerpt.com"
                 className="text-red-400 underline-offset-2 hover:underline"
               >
-                info@trainpt.com
+                pedro.ruiz@trainerpt.com
               </a>
               .
             </p>

@@ -37,7 +37,7 @@ export default function ErrorPage({
           Ir al inicio
         </Link>
         <a
-          href="mailto:info@trainpt.com"
+          href="mailto:pedro.ruiz@trainerpt.com"
           className="text-sm text-gray-400 underline-offset-2 hover:text-white hover:underline"
         >
           Contacto
