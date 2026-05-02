@@ -10,6 +10,7 @@ import {
   GripVertical,
   Pencil,
   Check,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -315,6 +316,8 @@ interface RoutineTemplateDialogProps {
     schema: RoutineTemplateExercise[];
   }) => Promise<void>;
   initialTemplate?: RoutineTemplate | null;
+  /** Solo en edición: abre el flujo para duplicar como nueva plantilla (modal en el padre). */
+  onRequestDuplicateFromEdit?: () => void;
 }
 
 export function RoutineTemplateDialog({
@@ -322,6 +325,7 @@ export function RoutineTemplateDialog({
   onOpenChange,
   onSubmit,
   initialTemplate,
+  onRequestDuplicateFromEdit,
 }: RoutineTemplateDialogProps) {
   // Helper function to extract muscle names from the muscles field
   const getMuscleNames = (
@@ -1112,22 +1116,43 @@ export function RoutineTemplateDialog({
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
-              disabled={saving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
-            >
-              {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
-            </Button>
+          <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {isEdit && onRequestDuplicateFromEdit ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving || hasUnsavedChanges}
+                  title={
+                    hasUnsavedChanges
+                      ? "Guarda o descarta cambios antes de duplicar"
+                      : undefined
+                  }
+                  onClick={onRequestDuplicateFromEdit}
+                  className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Duplicar como nueva
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={saving}
+                className="bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+              >
+                {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

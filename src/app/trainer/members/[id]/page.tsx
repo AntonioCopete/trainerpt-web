@@ -22,6 +22,7 @@ import {
   Archive,
   Loader2,
   ChevronDown,
+  BookmarkPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,10 @@ import {
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { CustomRoutineDialog } from "@/src/app/components/routines/CustomRoutineDialog";
 import { ExerciseDetailDialog } from "@/src/app/components/routines/ExerciseDetailDialog";
+import {
+  RoutineTemplateForkDialog,
+  type RoutineTemplateForkSource,
+} from "@/src/app/components/routines/RoutineTemplateForkDialog";
 import { TrainerResourceManager } from "@/src/app/components/resources/TrainerResourceManager";
 import { MemberProgressPanel } from "@/src/app/components/forms/MemberProgressPanel";
 import { toast } from "sonner";
@@ -122,7 +127,40 @@ export default function TrainerClientDetailPage({
   const [archivingRoutineId, setArchivingRoutineId] = useState<string | null>(
     null,
   );
+  const [forkSaveRoutineOpen, setForkSaveRoutineOpen] = useState(false);
+  const [forkRoutineSource, setForkRoutineSource] =
+    useState<RoutineTemplateForkSource | null>(null);
+  const [forkRoutineDefaultName, setForkRoutineDefaultName] = useState("");
+  const [forkRoutineDefaultDescription, setForkRoutineDefaultDescription] =
+    useState("");
   const supabase = createSupabaseBrowser();
+
+  const openSaveRoutineAsTemplate = (assignment: RoutineAssignment) => {
+    const snapshot = Array.isArray(assignment.schemaSnapshot)
+      ? assignment.schemaSnapshot
+      : [];
+    if (snapshot.length === 0) {
+      toast.error(
+        "Esta rutina no tiene ejercicios para guardar como plantilla",
+      );
+      return;
+    }
+    const baseName = routineAssignmentDisplayName(assignment);
+    const baseDesc = routineAssignmentDisplayDescription(assignment);
+    setForkRoutineSource({
+      kind: "schema",
+      schema: snapshot as RoutineTemplateExercise[],
+    });
+    setForkRoutineDefaultName(
+      baseName && baseName !== "Rutina"
+        ? `Plantilla desde ${baseName}`
+        : "Plantilla desde rutina asignada",
+    );
+    setForkRoutineDefaultDescription(
+      baseDesc && baseDesc !== "Sin descripción" ? baseDesc : "",
+    );
+    setForkSaveRoutineOpen(true);
+  };
 
   const toggleRoutineHistoryExpanded = (assignmentId: string) => {
     setExpandedRoutineHistoryIds((prev) => {
@@ -1043,6 +1081,25 @@ export default function TrainerClientDetailPage({
 
                       {isExpanded && (
                         <div className="mt-4">
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 border-gray-700 bg-transparent text-xs text-gray-300 hover:bg-gray-800 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openSaveRoutineAsTemplate(assignment);
+                              }}
+                              disabled={
+                                !Array.isArray(assignment.schemaSnapshot) ||
+                                assignment.schemaSnapshot.length === 0
+                              }
+                            >
+                              <BookmarkPlus className="h-3.5 w-3.5" />
+                              Guardar como plantilla
+                            </Button>
+                          </div>
                           {(assignment.template?.description?.trim() ||
                             assignment.description?.trim()) && (
                             <p className="mb-3 text-sm text-gray-300">
@@ -1236,6 +1293,19 @@ export default function TrainerClientDetailPage({
         open={routineExerciseDetailOpen}
         onOpenChange={setRoutineExerciseDetailOpen}
         exercise={routineExerciseDetail}
+      />
+      <RoutineTemplateForkDialog
+        open={forkSaveRoutineOpen}
+        onOpenChange={(open) => {
+          setForkSaveRoutineOpen(open);
+          if (!open) setForkRoutineSource(null);
+        }}
+        defaultName={forkRoutineDefaultName}
+        defaultDescription={forkRoutineDefaultDescription}
+        source={forkRoutineSource}
+        onCreated={() => {
+          router.push("/trainer/routines");
+        }}
       />
     </div>
   );
