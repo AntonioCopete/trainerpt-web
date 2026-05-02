@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArchiveRestore,
   CalendarRange,
+  Copy,
   Trash2,
   Dumbbell,
   Edit3,
@@ -19,6 +20,10 @@ import type { RoutineTemplate } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { RoutineTemplateDialog } from "@/src/app/components/routines/RoutineTemplateDialog";
 import { TrainerExerciseLibraryDialog } from "@/src/app/components/routines/TrainerExerciseLibraryDialog";
+import {
+  RoutineTemplateForkDialog,
+  type RoutineTemplateForkSource,
+} from "@/src/app/components/routines/RoutineTemplateForkDialog";
 import { messageFromTemplateSaveResponse } from "@/src/app/lib/routine-template-save-errors";
 
 export default function TrainerRoutinesPage() {
@@ -37,42 +42,67 @@ export default function TrainerRoutinesPage() {
     [],
   );
   const [showArchived, setShowArchived] = useState(false);
+  const [forkDialogOpen, setForkDialogOpen] = useState(false);
+  const [forkSource, setForkSource] =
+    useState<RoutineTemplateForkSource | null>(null);
+  const [forkDefaultName, setForkDefaultName] = useState("");
+  const [forkDefaultDescription, setForkDefaultDescription] = useState("");
 
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token;
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        },
-      );
-      const data = await res.json();
-      setTemplates(data.templates ?? []);
+  const fetchTemplates = useCallback(
+    async (opts?: { showLoading?: boolean }) => {
+      if (opts?.showLoading !== false) setLoading(true);
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        const data = await res.json();
+        setTemplates(data.templates ?? []);
 
-      const archivedRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/archived`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        },
-      );
-      const archivedData = await archivedRes.json().catch(() => ({}));
-      setArchivedTemplates(archivedData.templates ?? []);
-    } catch {
-      setTemplates([]);
-      toast.error("No se pudieron cargar las rutinas");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const archivedRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/routines/templates/archived`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        const archivedData = await archivedRes.json().catch(() => ({}));
+        setArchivedTemplates(archivedData.templates ?? []);
+      } catch {
+        setTemplates([]);
+        toast.error("No se pudieron cargar las rutinas");
+      } finally {
+        if (opts?.showLoading !== false) setLoading(false);
+      }
+    },
+    [supabase],
+  );
 
   useEffect(() => {
-    fetchTemplates();
+    void fetchTemplates({ showLoading: true });
   }, [fetchTemplates]);
+
+  const openDuplicateFork = useCallback((template: RoutineTemplate) => {
+    setForkSource({
+      kind: "template",
+      templateId: template.id,
+    });
+    setForkDefaultName(`${template.name.trim()} (copia)`);
+    setForkDefaultDescription(template.description?.trim() ?? "");
+    setForkDialogOpen(true);
+  }, []);
+
+  const handleForkCreated = useCallback(
+    (_created: RoutineTemplate) => {
+      void fetchTemplates({ showLoading: false });
+    },
+    [fetchTemplates],
+  );
 
   const filteredTemplates = useMemo(
     () =>
@@ -117,7 +147,7 @@ export default function TrainerRoutinesPage() {
       }
       toast.success("Rutina actualizada");
       setEditingTemplate(null);
-      await fetchTemplates();
+      await fetchTemplates({ showLoading: false });
       return;
     }
 
@@ -144,7 +174,7 @@ export default function TrainerRoutinesPage() {
       return;
     }
     toast.success("Rutina creada");
-    await fetchTemplates();
+    await fetchTemplates({ showLoading: false });
   };
 
   const archiveTemplate = async (templateId: string) => {
@@ -162,7 +192,7 @@ export default function TrainerRoutinesPage() {
       return;
     }
     toast.success("Rutina archivada");
-    await fetchTemplates();
+    await fetchTemplates({ showLoading: false });
   };
 
   const restoreTemplate = async (templateId: string) => {
@@ -180,7 +210,7 @@ export default function TrainerRoutinesPage() {
       return;
     }
     toast.success("Rutina restaurada");
-    await fetchTemplates();
+    await fetchTemplates({ showLoading: false });
   };
 
   const deleteTemplatePermanently = async (templateId: string) => {
@@ -198,7 +228,7 @@ export default function TrainerRoutinesPage() {
       return;
     }
     toast.success("Rutina eliminada definitivamente");
-    await fetchTemplates();
+    await fetchTemplates({ showLoading: false });
   };
 
   return (
@@ -330,6 +360,16 @@ export default function TrainerRoutinesPage() {
                   Editar
                 </Button>
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openDuplicateFork(template)}
+                  title="Duplicar plantilla"
+                  className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Duplicar
+                </Button>
+                <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => void archiveTemplate(template.id)}
@@ -402,15 +442,32 @@ export default function TrainerRoutinesPage() {
 
       <RoutineTemplateDialog
         open={templateDialogOpen}
-        onOpenChange={setTemplateDialogOpen}
+        onOpenChange={(open) => {
+          setTemplateDialogOpen(open);
+          if (!open) setEditingTemplate(null);
+        }}
         initialTemplate={editingTemplate}
         onSubmit={handleCreateOrUpdateTemplate}
+        onRequestDuplicateFromEdit={
+          editingTemplate ? () => openDuplicateFork(editingTemplate) : undefined
+        }
+      />
+      <RoutineTemplateForkDialog
+        open={forkDialogOpen}
+        onOpenChange={(open) => {
+          setForkDialogOpen(open);
+          if (!open) setForkSource(null);
+        }}
+        defaultName={forkDefaultName}
+        defaultDescription={forkDefaultDescription}
+        source={forkSource}
+        onCreated={handleForkCreated}
       />
       <AssignRoutineDialog
         open={assignDialogOpen}
         onOpenChange={setAssignDialogOpen}
         template={selectedTemplate}
-        onAssigned={fetchTemplates}
+        onAssigned={() => void fetchTemplates({ showLoading: false })}
       />
       <TrainerExerciseLibraryDialog
         open={exerciseLibraryOpen}
