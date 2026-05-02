@@ -312,7 +312,7 @@ export default function TrainerRoutinesPage() {
           {filteredTemplates.map((template) => (
             <div
               key={template.id}
-              className="rounded-2xl border border-gray-800 bg-gray-900/60 p-4"
+              className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5"
             >
               <p className="font-semibold text-white">{template.name}</p>
               <p className="mt-1 line-clamp-2 text-sm text-gray-400">
@@ -346,49 +346,53 @@ export default function TrainerRoutinesPage() {
                   ) : null;
                 })()}
 
-              <div className="mt-4 flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditingTemplate(template);
-                    setTemplateDialogOpen(true);
-                  }}
-                  className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openDuplicateFork(template)}
-                  title="Duplicar plantilla"
-                  className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Duplicar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void archiveTemplate(template.id)}
-                  className="gap-1 text-gray-400 hover:bg-gray-800 hover:text-white"
-                >
-                  <ArchiveRestore className="h-3.5 w-3.5" />
-                  Archivar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTemplate(template);
-                    setAssignDialogOpen(true);
-                  }}
-                  className="ml-auto gap-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  Asignar
-                </Button>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingTemplate(template);
+                      setTemplateDialogOpen(true);
+                    }}
+                    className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openDuplicateFork(template)}
+                    title="Duplicar plantilla"
+                    className="gap-1 border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Duplicar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void archiveTemplate(template.id)}
+                    className="gap-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+                  >
+                    <ArchiveRestore className="h-3.5 w-3.5" />
+                    Archivar
+                  </Button>
+                </div>
+                <div className="flex sm:justify-end sm:shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTemplate(template);
+                      setAssignDialogOpen(true);
+                    }}
+                    className="w-full gap-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 sm:w-auto"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Asignar
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
