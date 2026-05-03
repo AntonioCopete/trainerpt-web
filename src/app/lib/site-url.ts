@@ -6,5 +6,5 @@ export function getSiteUrl(): string {
   if (fromEnv) return fromEnv;
   if (process.env.VERCEL_URL)
     return `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, "")}`;
-  return "https://app.trainerpt.com";
+  return "https://trainerpt.com";
 }
