@@ -189,15 +189,21 @@ export default function BillingPage() {
                     )}
                 </div>
                 {subscription.plan !== SubscriptionPlan.FREE && (
-                  <Button
-                    variant="outline"
-                    onClick={handleManageSubscription}
-                    className="gap-2 border-gray-700 bg-gray-900 hover:border-red-500/50 hover:bg-gradient-to-r hover:from-red-500/10 hover:to-orange-500/10 text-gray-100 hover:text-white transition-all"
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    Gestionar
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
+                  <div className="flex flex-col items-end gap-2 text-right">
+                    <Button
+                      variant="outline"
+                      onClick={handleManageSubscription}
+                      className="gap-2 border-gray-700 bg-gray-900 hover:border-red-500/50 hover:bg-gradient-to-r hover:from-red-500/10 hover:to-orange-500/10 text-gray-100 hover:text-white transition-all"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      Gestionar suscripción
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                    <p className="max-w-[260px] text-xs text-gray-500 leading-snug">
+                      Portal de Stripe: cancelar renovación, método de pago e
+                      historial de facturas.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -397,8 +403,11 @@ export default function BillingPage() {
                 ¿Puedo cancelar en cualquier momento?
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Sí, puedes cancelar tu suscripción en cualquier momento. Tu plan
-                seguirá activo hasta el final del período pagado.
+                Sí. Si tienes un plan de pago, usa{" "}
+                <span className="text-gray-300">Gestionar suscripción</span>{" "}
+                arriba: se abre el portal de Stripe, donde puedes dejar de pagar
+                (cancelar la renovación). Tu acceso al plan pagado se mantiene
+                hasta el final del período ya cobrado.
               </p>
             </div>
             <div>
