@@ -1,5 +1,5 @@
 /**
- * Recursos compartidos (PDFs, documentos) — contrato pensado para API Nest/backend.
+ * Recursos compartidos (PDFs, documentos, Excel…) — contrato pensado para API Nest/backend.
  * Endpoints esperados: GET/POST/PATCH/DELETE /resources, POST .../upload-url,
  * PATCH .../shares, GET /members/me/resources
  */
