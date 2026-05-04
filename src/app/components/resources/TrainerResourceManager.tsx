@@ -42,6 +42,20 @@ import {
 } from "@/src/app/lib/resources-api";
 import { uploadResourceFile } from "@/src/app/lib/resources-upload";
 
+/** Muchos navegadores no informan MIME en .xlsx/.xls; el backend necesita uno estable para firmar el PUT. */
+function guessTrainerResourceContentType(file: File): string {
+  const t = file.type?.trim();
+  if (t) return t;
+  const n = file.name.toLowerCase();
+  if (n.endsWith(".pdf")) return "application/pdf";
+  if (n.endsWith(".png")) return "image/png";
+  if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+  if (n.endsWith(".xlsx"))
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (n.endsWith(".xls")) return "application/vnd.ms-excel";
+  return "application/octet-stream";
+}
+
 export interface TrainerResourceManagerProps {
   /** Si se define (p. ej. Dietas), solo este tipo en listado y al crear */
   fixedResourceType?: ResourceType;
@@ -201,7 +215,9 @@ export function TrainerResourceManager({
       return;
     }
     if (!file) {
-      toast.error("Selecciona un archivo: PDF, JPEG o PNG (máx. 30 MB).");
+      toast.error(
+        "Selecciona un archivo: PDF, JPEG, PNG o Excel (.xlsx / .xls) (máx. 30 MB).",
+      );
       return;
     }
 
@@ -213,7 +229,7 @@ export function TrainerResourceManager({
     }
 
     const resourceType = fixedResourceType ?? createType;
-    const contentType = file.type || "application/octet-stream";
+    const contentType = guessTrainerResourceContentType(file);
 
     setUploading(true);
     try {
@@ -446,7 +462,7 @@ export function TrainerResourceManager({
             <input
               id={fileInputId}
               type="file"
-              accept=".pdf,application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="peer sr-only"
             />
@@ -462,9 +478,10 @@ export function TrainerResourceManager({
           </div>
           <p className="text-xs text-gray-500">
             Formatos permitidos: <span className="text-gray-400">PDF</span>,{" "}
-            <span className="text-gray-400">JPEG</span> y{" "}
-            <span className="text-gray-400">PNG</span>. Tamaño máximo
-            30&nbsp;MB. Subida directa al bucket con URL firmada (GCS).
+            <span className="text-gray-400">JPEG</span>,{" "}
+            <span className="text-gray-400">PNG</span>,{" "}
+            <span className="text-gray-400">Excel (.xlsx / .xls)</span>. Tamaño
+            máximo 30&nbsp;MB. Subida directa al bucket con URL firmada (GCS).
           </p>
         </div>
         <Button
