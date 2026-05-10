@@ -20,6 +20,7 @@ import type { RoutineTemplate } from "@/src/app/lib/types/routines";
 import { AssignRoutineDialog } from "@/src/app/components/routines/AssignRoutineDialog";
 import { RoutineTemplateDialog } from "@/src/app/components/routines/RoutineTemplateDialog";
 import { TrainerExerciseLibraryDialog } from "@/src/app/components/routines/TrainerExerciseLibraryDialog";
+import { HowToVideoButton } from "@/src/app/components/HowToVideoButton";
 import {
   RoutineTemplateForkDialog,
   type RoutineTemplateForkSource,
@@ -242,7 +243,8 @@ export default function TrainerRoutinesPage() {
             Crea y comparte rutinas por periodos con tus members
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <HowToVideoButton tutorial="routines" />
           <Button
             variant="outline"
             onClick={() => setExerciseLibraryOpen(true)}

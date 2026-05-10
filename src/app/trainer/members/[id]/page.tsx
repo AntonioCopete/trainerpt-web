@@ -72,6 +72,7 @@ import {
 } from "@/src/app/components/routines/RoutineTemplateForkDialog";
 import { TrainerResourceManager } from "@/src/app/components/resources/TrainerResourceManager";
 import { MemberProgressPanel } from "@/src/app/components/forms/MemberProgressPanel";
+import { HowToVideoButton } from "@/src/app/components/HowToVideoButton";
 import { toast } from "sonner";
 
 const ROUTINE_STATUS_BADGE_CLASS: Record<string, string> = {
@@ -629,7 +630,8 @@ export default function TrainerClientDetailPage({
                 <span className="truncate">{member.email}</span>
               </p>
             </div>
-            <div className="flex items-start sm:ml-auto">
+            <div className="flex flex-wrap items-start gap-2 sm:ml-auto">
+              <HowToVideoButton tutorial="clientView" />
               <Button
                 variant="outline"
                 size="sm"
