@@ -74,6 +74,8 @@ export interface TrainerResourceManagerProps {
   /** Sustituye href/etiqueta del botón del banner (p. ej. /trainer/diets en ficha cliente) */
   assignToMemberHubHref?: string;
   assignToMemberHubLabel?: string;
+  /** Acciones extra a la derecha del título (p. ej. botón "Cómo funciona"). Solo se muestra si hidePageHeader=false. */
+  headerActions?: React.ReactNode;
 }
 
 export function TrainerResourceManager({
@@ -89,6 +91,7 @@ export function TrainerResourceManager({
   showHubResourcesLink,
   assignToMemberHubHref,
   assignToMemberHubLabel,
+  headerActions,
 }: TrainerResourceManagerProps) {
   const supabase = createSupabaseBrowser();
   const [resources, setResources] = useState<TrainerResource[]>([]);
@@ -334,18 +337,21 @@ export function TrainerResourceManager({
             <h1 className="text-2xl font-bold text-white">{pageTitle}</h1>
             <p className="mt-1 text-sm text-gray-400">{pageSubtitle}</p>
           </div>
-          {showLinkToAllResources ? (
-            <Button
-              variant="outline"
-              asChild
-              className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800"
-            >
-              <Link href="/trainer/resources" className="gap-2">
-                <FolderOpen className="h-4 w-4" />
-                Ver todos los recursos
-              </Link>
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {headerActions}
+            {showLinkToAllResources ? (
+              <Button
+                variant="outline"
+                asChild
+                className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800"
+              >
+                <Link href="/trainer/resources" className="gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Ver todos los recursos
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

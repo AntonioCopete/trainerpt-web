@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import type { MemberSummary } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 import { InviteClientDialog } from "../../components/InviteClientDialog";
+import { HowToVideoButton } from "../../components/HowToVideoButton";
 import { SubscriptionLimitBanner } from "../../components/SubscriptionLimitBanner";
 import { SubscriptionWithUsage } from "../../lib/types/subscription";
 
@@ -96,15 +97,18 @@ export default function TrainerClientsPage() {
             )}
           </p>
         </div>
-        <Button
-          onClick={() => setInviteDialogOpen(true)}
-          disabled={isAtLimit}
-          className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={isAtLimit ? "Has alcanzado el límite de clientes" : ""}
-        >
-          <UserPlus className="h-4 w-4" />
-          Invitar cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          <HowToVideoButton tutorial="inviteClients" />
+          <Button
+            onClick={() => setInviteDialogOpen(true)}
+            disabled={isAtLimit}
+            className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isAtLimit ? "Has alcanzado el límite de clientes" : ""}
+          >
+            <UserPlus className="h-4 w-4" />
+            Invitar cliente
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">

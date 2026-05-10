@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { TemplateCard } from "../../components/forms/TemplateCard";
 import { SendFormDialog } from "../../components/forms/SendFormDialog";
 import { InviteClientDialog } from "../../components/InviteClientDialog";
+import { HowToVideoButton } from "../../components/HowToVideoButton";
 import type { FormTemplate } from "../../lib/types/forms";
 import { createSupabaseBrowser } from "../../lib/supabase/browser";
 import { toast } from "sonner";
@@ -217,7 +218,8 @@ export default function TrainerFormsPage() {
             seguimiento
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <HowToVideoButton tutorial="forms" />
           <Button
             variant="outline"
             onClick={() => setInviteDialogOpen(true)}
